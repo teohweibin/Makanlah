@@ -1,0 +1,39 @@
+[
+  {
+    "_comment": "Open orders — the meal the diner is eating right now, used by the guided review prompt. Kept SEPARATE from orders.json on purpose: these must never enter baseline-cadence or silent-churn maths, or reviewing a meal would instantly un-flag the diner and break the demo.",
+    "id": "aord_a",
+    "diner_id": "diner_a",
+    "restaurant_id": "rest_warung_mama",
+    "dish_ids": ["dish_ayam_percik", "dish_roti_jala", "dish_teh_tarik"],
+    "days_ago": 0,
+    "amount": 24.5,
+    "table": "Table 4"
+  },
+  {
+    "id": "aord_b",
+    "diner_id": "diner_b",
+    "restaurant_id": "rest_warung_mama",
+    "dish_ids": ["dish_nasi_lemak", "dish_mee_goreng", "dish_teh_tarik"],
+    "days_ago": 0,
+    "amount": 21.0,
+    "table": "Table 2"
+  },
+  {
+    "id": "aord_c",
+    "diner_id": "diner_c",
+    "restaurant_id": "rest_warung_mama",
+    "dish_ids": ["dish_mee_goreng", "dish_teh_tarik"],
+    "days_ago": 0,
+    "amount": 12.0,
+    "table": "Takeaway"
+  },
+  {
+    "id": "aord_d",
+    "diner_id": "diner_d",
+    "restaurant_id": "rest_warung_mama",
+    "dish_ids": ["dish_sambal_udang", "dish_nasi_lemak"],
+    "days_ago": 0,
+    "amount": 27.0,
+    "table": "Table 9"
+  }
+]

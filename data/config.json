@@ -1,0 +1,10 @@
+{
+  "_comment": "Tunable thresholds for the core logic spec. All time values in days.",
+  "at_risk_multiplier": 2,
+  "min_orders_for_baseline": 3,
+  "silent_churn_window_days": 14,
+  "sustained_return_eval_days": 30,
+  "sustained_return_tolerance": 0.2,
+  "declining_spend_threshold": 0.25,
+  "currency": "MYR"
+}

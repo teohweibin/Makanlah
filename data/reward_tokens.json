@@ -1,0 +1,33 @@
+[
+  {
+    "_comment": "mint_address is filled in at Build Order step 5 when the SPL token is actually minted on devnet. `redeemed` here is a fallback only — the dashboard reads redemption status from the chain, not from this file.",
+    "id": "tok_a_prior",
+    "diner_id": "diner_a",
+    "restaurant_id": "rest_warung_mama",
+    "intervention_type": "dish_fix_reward",
+    "mint_address": "EpW41W2cHfYoEKEtGgCy7ojv9iG9HvKNSd5fxcfsMpQ8",
+    "issued_days_ago": 120,
+    "redeemed": true,
+    "source_of_truth": "chain"
+  },
+  {
+    "id": "tok_a_pakcik",
+    "diner_id": "diner_a",
+    "restaurant_id": "rest_kedai_pakcik",
+    "intervention_type": "neutral_invite",
+    "mint_address": "7YZjLSG2avoMNPSQiFJSSGvavmcry9YiBPPcPWRuaqLB",
+    "issued_days_ago": 32,
+    "redeemed": false,
+    "source_of_truth": "chain"
+  },
+  {
+    "id": "tok_c_prior",
+    "diner_id": "diner_c",
+    "restaurant_id": "rest_warung_mama",
+    "intervention_type": "reorder_nudge",
+    "mint_address": "HquEjRqDVfFacvcKXTr6uvJKFmQrat3hRrzRiNN28ENR",
+    "issued_days_ago": 118,
+    "redeemed": true,
+    "source_of_truth": "chain"
+  }
+]

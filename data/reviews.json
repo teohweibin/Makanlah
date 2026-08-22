@@ -1,0 +1,42 @@
+[
+  {
+    "id": "rev_a1",
+    "order_id": "ord_a4",
+    "diner_id": "diner_a",
+    "restaurant_id": "rest_warung_mama",
+    "days_ago": 46,
+    "free_text": "Ayam percik was a bit dry this time, not like usual.",
+    "guided_tags": ["dish_dry:dish_ayam_percik"],
+    "rating": 3
+  },
+  {
+    "id": "rev_a0",
+    "order_id": "ord_a2",
+    "diner_id": "diner_a",
+    "restaurant_id": "rest_warung_mama",
+    "days_ago": 74,
+    "free_text": "Sedap as always, thank you Mama Sari!",
+    "guided_tags": ["all_good"],
+    "rating": 5
+  },
+  {
+    "id": "rev_b1",
+    "order_id": "ord_b4",
+    "diner_id": "diner_b",
+    "restaurant_id": "rest_warung_mama",
+    "days_ago": 29,
+    "free_text": "Food is good but I waited almost 30 minutes at lunch.",
+    "guided_tags": ["wait_time_long"],
+    "rating": 3
+  },
+  {
+    "id": "rev_c1",
+    "order_id": "ord_c2",
+    "diner_id": "diner_c",
+    "restaurant_id": "rest_warung_mama",
+    "days_ago": 38,
+    "free_text": "Nasi lemak still the best around here.",
+    "guided_tags": ["all_good"],
+    "rating": 5
+  }
+]

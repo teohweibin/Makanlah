@@ -1,0 +1,22 @@
+[
+  { "id": "ord_a1", "diner_id": "diner_a", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_ayam_percik", "dish_teh_tarik"], "days_ago": 88, "amount": 41.5 },
+  { "id": "ord_a2", "diner_id": "diner_a", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_ayam_percik", "dish_nasi_lemak"], "days_ago": 74, "amount": 38.0 },
+  { "id": "ord_a3", "diner_id": "diner_a", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_sambal_udang", "dish_roti_jala"], "days_ago": 60, "amount": 44.0 },
+  { "id": "ord_a4", "diner_id": "diner_a", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_ayam_percik"], "days_ago": 46, "amount": 27.5 },
+  { "id": "ord_a5", "diner_id": "diner_a", "restaurant_id": "rest_kedai_pakcik", "dish_ids": ["dish_kaya_toast", "dish_kopi_o"], "days_ago": 30, "amount": 9.3 },
+
+  { "id": "ord_b1", "diner_id": "diner_b", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_nasi_lemak", "dish_teh_tarik"], "days_ago": 50, "amount": 26.0 },
+  { "id": "ord_b2", "diner_id": "diner_b", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_mee_goreng", "dish_teh_tarik"], "days_ago": 43, "amount": 24.5 },
+  { "id": "ord_b3", "diner_id": "diner_b", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_nasi_lemak", "dish_roti_jala"], "days_ago": 36, "amount": 27.0 },
+  { "id": "ord_b4", "diner_id": "diner_b", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_mee_goreng", "dish_teh_tarik"], "days_ago": 29, "amount": 25.5 },
+
+  { "id": "ord_c1", "diner_id": "diner_c", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_mee_goreng"], "days_ago": 48, "amount": 19.5 },
+  { "id": "ord_c2", "diner_id": "diner_c", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_nasi_lemak", "dish_teh_tarik"], "days_ago": 38, "amount": 21.0 },
+  { "id": "ord_c3", "diner_id": "diner_c", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_mee_goreng"], "days_ago": 28, "amount": 18.0 },
+  { "id": "ord_c4", "diner_id": "diner_c", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_nasi_lemak", "dish_teh_tarik"], "days_ago": 18, "amount": 20.5 },
+
+  { "id": "ord_d1", "diner_id": "diner_d", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_sambal_udang", "dish_nasi_lemak"], "days_ago": 130, "amount": 32.0 },
+  { "id": "ord_d2", "diner_id": "diner_d", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_sambal_udang", "dish_teh_tarik"], "days_ago": 110, "amount": 31.5 },
+  { "id": "ord_d3", "diner_id": "diner_d", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_ayam_percik", "dish_roti_jala"], "days_ago": 90, "amount": 32.5 },
+  { "id": "ord_d4", "diner_id": "diner_d", "restaurant_id": "rest_warung_mama", "dish_ids": ["dish_sambal_udang", "dish_nasi_lemak"], "days_ago": 70, "amount": 32.0 }
+]

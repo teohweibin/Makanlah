@@ -1,0 +1,33 @@
+[
+  {
+    "_comment": "Static curated Discover & Support pool (PRD Day-1 'build light' — no recommendation engine). restaurant_id links to a real restaurant where one exists; the rest are display-only demo entries.",
+    "id": "pool_kedai",
+    "restaurant_id": "rest_kedai_pakcik",
+    "name": "Kedai Kopi Pak Cik Rahman",
+    "tagline": "Corner kopitiam, quiet since the new mall opened",
+    "distance": "400 m",
+    "multiplier": 2,
+    "reason": "Footfall halved when the mall food court opened",
+    "signature_dish": "Kaya Toast Set"
+  },
+  {
+    "id": "pool_nasi_kak_som",
+    "restaurant_id": null,
+    "name": "Nasi Kandar Kak Som",
+    "tagline": "One-woman kitchen, open since before the highway",
+    "distance": "1.2 km",
+    "multiplier": 2,
+    "reason": "Lost the lunch crowd when the office block relocated",
+    "signature_dish": "Nasi Kandar Ayam"
+  },
+  {
+    "id": "pool_mee_hoon_ah_seng",
+    "restaurant_id": null,
+    "name": "Ah Seng Mee Hoon",
+    "tagline": "Morning-only stall, third generation",
+    "distance": "800 m",
+    "multiplier": 3,
+    "reason": "Rebuilding after two months closed for repairs",
+    "signature_dish": "Mee Hoon Sup"
+  }
+]

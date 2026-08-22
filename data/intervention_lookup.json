@@ -1,0 +1,73 @@
+{
+  "_comment": "Reason -> Intervention selection table AND the presentation spec, in one lookup so the UI renders conditionally instead of hardcoding five screens. tag_color maps to literal Tailwind classes in components/ui.tsx — Tailwind cannot scan JSON for class names, so they must live in a .tsx file.",
+  "rules": [
+    {
+      "reason_type": "dish_issue",
+      "evidence_strength": "strong",
+      "intervention_type": "dish_fix_reward"
+    },
+    {
+      "reason_type": "wait_time",
+      "evidence_strength": "strong",
+      "intervention_type": "priority_seating"
+    },
+    {
+      "reason_type": "declining_spend",
+      "evidence_strength": "weak",
+      "intervention_type": "value_bundle"
+    },
+    {
+      "reason_type": "silent_churn",
+      "evidence_strength": "weak",
+      "intervention_type": "reorder_nudge"
+    },
+    {
+      "reason_type": "no_signal",
+      "evidence_strength": "none",
+      "intervention_type": "neutral_invite"
+    }
+  ],
+  "fallback_intervention_type": "neutral_invite",
+  "presentation": {
+    "dish_fix_reward": {
+      "icon": "🍽️",
+      "tag_label": "Dish fixed",
+      "tag_color": "orange",
+      "headline_template": "We've fixed the {dish} — come try it on us",
+      "body": "You told us about it, and it's sorted. This one's on the house.",
+      "reward_percent": 100
+    },
+    "priority_seating": {
+      "icon": "⏱️",
+      "tag_label": "Priority seating",
+      "tag_color": "blue",
+      "headline_template": "Skip the wait — your table's ready when you are",
+      "body": "We hold two seatings back for regulars. One of them is yours.",
+      "reward_percent": 15
+    },
+    "value_bundle": {
+      "icon": "💰",
+      "tag_label": "Value bundle",
+      "tag_color": "green",
+      "headline_template": "A better deal, just for you",
+      "body": "Your usual two dishes, bundled at a friendlier price.",
+      "reward_percent": 25
+    },
+    "reorder_nudge": {
+      "icon": "🔄",
+      "tag_label": "Reorder",
+      "tag_color": "gray",
+      "headline_template": "Craving your usual? One tap away",
+      "body": "Your last order, ready to send again.",
+      "reward_percent": 10
+    },
+    "neutral_invite": {
+      "icon": "👋",
+      "tag_label": "Invitation",
+      "tag_color": "gray",
+      "headline_template": "It's been a while — we've saved you a spot",
+      "body": "No questions asked. The kitchen's still here whenever you are.",
+      "reward_percent": 10
+    }
+  }
+}

@@ -1,0 +1,34 @@
+# dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# next.js
+.next/
+out/
+build/
+
+# env — NEVER commit devnet keypairs, seed phrases or RPC keys
+.env
+.env.*
+!.env.example
+*.keypair.json
+keypair*.json
+wallets/
+
+# misc
+.DS_Store
+*.log
+.vercel
+.idea/
+.vscode/
+
+# local devnet demo wallets — NEVER commit
+.wallets/
+
+# devleague files to exclude
+DevLeague Problem Statements.md
+DevLeague_Draft.md
+DevLeague_Judging Criteria.md
+DevLeague_Lab4_PRD.md
+

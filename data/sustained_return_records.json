@@ -1,0 +1,6 @@
+[
+  { "diner_id": "diner_a", "restaurant_id": "rest_warung_mama", "baseline_cadence": 14, "post_win_back_cadence_30d": 15, "win_back_days_ago": 118, "status": "recovered" },
+  { "diner_id": "diner_b", "restaurant_id": "rest_warung_mama", "baseline_cadence": 7,  "post_win_back_cadence_30d": 12,  "win_back_days_ago": 117, "status": "not_recovered" },
+  { "diner_id": "diner_c", "restaurant_id": "rest_warung_mama", "baseline_cadence": 10, "post_win_back_cadence_30d": 10.5, "win_back_days_ago": 116, "status": "recovered" },
+  { "diner_id": "diner_d", "restaurant_id": "rest_warung_mama", "baseline_cadence": 20, "post_win_back_cadence_30d": null, "win_back_days_ago": 25,  "status": "pending" }
+]

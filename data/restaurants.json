@@ -1,0 +1,58 @@
+[
+  {
+    "id": "rest_warung_mama",
+    "name": "Warung Mama Sari",
+    "tagline": "Family-run kampung cooking since 1998",
+    "is_struggling": false,
+    "is_anchor": true,
+    "known_dishes": [
+      { "id": "dish_ayam_percik", "name": "Ayam Percik", "price": 14.5 },
+      { "id": "dish_nasi_lemak", "name": "Nasi Lemak Special", "price": 9.0 },
+      { "id": "dish_mee_goreng", "name": "Mee Goreng Mamak", "price": 8.5 },
+      { "id": "dish_sambal_udang", "name": "Sambal Udang", "price": 18.0 },
+      { "id": "dish_roti_jala", "name": "Roti Jala with Kari", "price": 7.0 },
+      { "id": "dish_teh_tarik", "name": "Teh Tarik", "price": 3.5 }
+    ],
+    "known_pain_points": [
+      {
+        "id": "pain_dry_chicken",
+        "reason_type": "dish_issue",
+        "label": "Ayam Percik has run dry on late-evening batches",
+        "related_dish_id": "dish_ayam_percik",
+        "status": "fixed",
+        "fixed_note": "New batch-timing rule since last month"
+      },
+      {
+        "id": "pain_lunch_wait",
+        "reason_type": "wait_time",
+        "label": "12-2pm lunch peak wait times exceed 25 minutes",
+        "related_dish_id": null,
+        "status": "mitigated",
+        "fixed_note": "Two extra seatings held back for regulars"
+      }
+    ]
+  },
+  {
+    "id": "rest_kedai_pakcik",
+    "name": "Kedai Kopi Pak Cik Rahman",
+    "tagline": "Corner kopitiam, quiet since the new mall opened",
+    "is_struggling": true,
+    "is_anchor": false,
+    "support_multiplier": 2,
+    "known_dishes": [
+      { "id": "dish_kaya_toast", "name": "Kaya Toast Set", "price": 6.5 },
+      { "id": "dish_kopi_o", "name": "Kopi O Kosong", "price": 2.8 },
+      { "id": "dish_curry_mee", "name": "Curry Mee", "price": 10.0 }
+    ],
+    "known_pain_points": [
+      {
+        "id": "pain_footfall",
+        "reason_type": "no_signal",
+        "label": "Footfall dropped after nearby mall opened",
+        "related_dish_id": null,
+        "status": "open",
+        "fixed_note": null
+      }
+    ]
+  }
+]

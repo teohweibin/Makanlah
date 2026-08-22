@@ -1,0 +1,19 @@
+[
+  {
+    "_comment": "Prior-cycle campaign records, seeded so the dashboard Win-back rate / Sustained Return metrics have history on day one. New interventions are appended at runtime.",
+    "id": "int_prior_a", "risk_flag_id": "flag_prior_a", "diner_id": "diner_a", "restaurant_id": "rest_warung_mama",
+    "type": "dish_fix_reward", "reward_token_id": "tok_a_prior", "sent_days_ago": 120, "won_back": true, "historical": true
+  },
+  {
+    "id": "int_prior_b", "risk_flag_id": "flag_prior_b", "diner_id": "diner_b", "restaurant_id": "rest_warung_mama",
+    "type": "priority_seating", "reward_token_id": null, "sent_days_ago": 119, "won_back": true, "historical": true
+  },
+  {
+    "id": "int_prior_c", "risk_flag_id": "flag_prior_c", "diner_id": "diner_c", "restaurant_id": "rest_warung_mama",
+    "type": "reorder_nudge", "reward_token_id": "tok_c_prior", "sent_days_ago": 118, "won_back": true, "historical": true
+  },
+  {
+    "id": "int_prior_d", "risk_flag_id": "flag_prior_d", "diner_id": "diner_d", "restaurant_id": "rest_warung_mama",
+    "type": "neutral_invite", "reward_token_id": null, "sent_days_ago": 25, "won_back": false, "historical": true
+  }
+]

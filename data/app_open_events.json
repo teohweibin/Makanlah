@@ -1,0 +1,10 @@
+[
+  { "id": "evt_c1", "diner_id": "diner_c", "restaurant_id": "rest_warung_mama", "days_ago": 12 },
+  { "id": "evt_c2", "diner_id": "diner_c", "restaurant_id": "rest_warung_mama", "days_ago": 9 },
+  { "id": "evt_c3", "diner_id": "diner_c", "restaurant_id": "rest_warung_mama", "days_ago": 5 },
+  { "id": "evt_c4", "diner_id": "diner_c", "restaurant_id": "rest_warung_mama", "days_ago": 2 },
+
+  { "id": "evt_a1", "diner_id": "diner_a", "restaurant_id": "rest_warung_mama", "days_ago": 46 },
+  { "id": "evt_b1", "diner_id": "diner_b", "restaurant_id": "rest_warung_mama", "days_ago": 29 },
+  { "id": "evt_a2", "diner_id": "diner_a", "restaurant_id": "rest_kedai_pakcik", "days_ago": 30 }
+]
