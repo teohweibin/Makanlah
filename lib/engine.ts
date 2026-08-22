@@ -348,6 +348,87 @@ export interface FlaggedDiner {
   headline: string;
 }
 
+export interface MerchantActionItemLink {
+  dinerId: string;
+  dinerName: string;
+  reviewId: string;
+  orderId: string;
+  daysAgo: number;
+}
+
+export interface MerchantActionItem {
+  id: string;
+  issueText: string;
+  count: number;
+  fixed: boolean;
+  linkedDiners: MerchantActionItemLink[];
+  linkedMessageTemplate: string;
+}
+
+/**
+ * Groups confirmed guided-review issues by issue type for a merchant.
+ * This checklist is intentionally limited to diner-reported guided tags only:
+ * silent churn and no-signal states are inferred from app behavior, not from a diner
+ * telling us what went wrong, so they are deliberately excluded here. If this filter is
+ * removed, the action list starts mixing real complaints with generic churn signals.
+ */
+export function getMerchantActionItems(ds: Dataset, merchantId: string): MerchantActionItem[] {
+  const grouped = new Map<string, {
+    id: string;
+    issueText: string;
+    reasonType: ReasonType;
+    linkedDiners: MerchantActionItemLink[];
+  }>();
+
+  for (const review of ds.reviews.filter((r) => r.restaurant_id === merchantId)) {
+    const diner = ds.diners.find((d) => d.id === review.diner_id);
+
+    for (const rawTag of review.guided_tags) {
+      const { tag } = parseGuidedTag(rawTag, ds.guidedReviewTags);
+      // Keep this to explicit diner-reported guided-review issues only; do not include
+      // inferred churn/no-signal states or positive feedback tags.
+      if (
+        !tag ||
+        tag.reason_type === 'none' ||
+        tag.reason_type === 'silent_churn' ||
+        tag.reason_type === 'no_signal'
+      ) continue;
+
+      const key = tag.id;
+      const current = grouped.get(key) ?? {
+        id: `${merchantId}-${tag.id}`,
+        issueText: tag.label,
+        reasonType: tag.reason_type,
+        linkedDiners: [],
+      };
+
+      current.linkedDiners.push({
+        dinerId: review.diner_id,
+        dinerName: diner?.name ?? review.diner_id,
+        reviewId: review.id,
+        orderId: review.order_id,
+        daysAgo: review.days_ago,
+      });
+
+      grouped.set(key, current);
+    }
+  }
+
+  return [...grouped.values()]
+    .map((entry) => {
+      const interventionType = selectIntervention(entry.reasonType, 'strong', ds.interventionLookup);
+      return {
+        id: entry.id,
+        issueText: entry.issueText,
+        count: entry.linkedDiners.length,
+        fixed: false,
+        linkedDiners: entry.linkedDiners,
+        linkedMessageTemplate: ds.interventionLookup.presentation[interventionType].headline_template,
+      } satisfies MerchantActionItem;
+    })
+    .sort((a, b) => b.count - a.count || a.issueText.localeCompare(b.issueText));
+}
+
 /** Every flagged diner for one restaurant, most urgent first. */
 export function evaluateRestaurant(ds: Dataset, restaurantId: string): FlaggedDiner[] {
   return ds.diners

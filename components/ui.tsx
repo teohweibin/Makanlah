@@ -1,3 +1,8 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+import { gsap } from '@/lib/gsap-config';
+import { EVIDENCE_DISPLAY } from '@/lib/plain';
 import type { EvidenceStrength, RiskStatus } from '@/lib/types';
 
 /**
@@ -37,61 +42,108 @@ export function InterventionTag({
  * The evidence label is the point of the whole dashboard: the restaurant owner has to
  * be able to tell "she told us this" apart from "we guessed this" at a glance.
  */
-const EVIDENCE: Record<EvidenceStrength, { label: string; className: string; hint: string }> = {
-  verified_with_photo: {
-    label: 'Verified — photo + review',
-    className: 'bg-emerald-200 text-emerald-950 border-emerald-400',
-    hint: 'They showed us — a photo backs up what they said',
-  },
-  strong: {
-    label: 'Verified from review',
-    className: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-    hint: 'From a guided review — the diner told us this themselves',
-  },
-  weak: {
-    label: 'Inferred from behavior',
-    className: 'bg-amber-100 text-amber-900 border-amber-300',
-    hint: 'Pattern-based guess — not confirmed by the diner',
-  },
-  none: {
-    label: 'No signal',
-    className: 'bg-stone-100 text-stone-600 border-stone-300',
-    hint: 'No supporting data at all — treat gently',
-  },
-};
 
 export function EvidenceBadge({ strength }: { strength: EvidenceStrength }) {
-  const e = EVIDENCE[strength];
+  const e = EVIDENCE_DISPLAY[strength];
+  const ref = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+
+    const target = ref.current;
+    const group = target.closest('[data-badge-group]');
+    const badges = group ? group.querySelectorAll('[data-badge-stamp]') : [target];
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        badges,
+        {
+          opacity: 0,
+          rotate: -8,
+          scale: 1.4,
+          transformOrigin: 'center center',
+        },
+        {
+          opacity: 1,
+          rotate: 0,
+          scale: 1,
+          duration: 0.4,
+          ease: 'back.out(2)',
+          stagger: 0.08,
+        },
+      );
+    }, group ?? target.parentElement ?? undefined);
+
+    return () => ctx.revert();
+  }, [strength]);
+
   return (
     <span
+      ref={ref}
+      data-badge-stamp
       title={e.hint}
-      className={`inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${e.className}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] ${e.className}`}
     >
       {e.label}
     </span>
   );
 }
 
-export function evidenceHint(strength: EvidenceStrength) {
-  return EVIDENCE[strength].hint;
-}
 
-/** Human-readable label for an evidence tier. The only place these strings live. */
-export function evidenceLabel(strength: EvidenceStrength) {
-  return EVIDENCE[strength].label;
-}
 
 const STATUS: Record<Exclude<RiskStatus, 'none'>, { label: string; className: string }> = {
-  at_risk: { label: 'At risk', className: 'bg-rose-100 text-rose-900 border-rose-300' },
-  silent_churn: { label: 'Silent churn', className: 'bg-violet-100 text-violet-900 border-violet-300' },
+  at_risk: {
+    label: 'At risk',
+    className:
+      'border border-[var(--color-at-risk)]/30 bg-[var(--color-soft-red)] text-[var(--color-at-risk)]',
+  },
+  silent_churn: {
+    label: 'Silent churn',
+    className:
+      'border border-[var(--color-silent)]/30 bg-[var(--color-soft-violet)] text-[var(--color-silent)]',
+  },
 };
 
 export function StatusBadge({ status }: { status: RiskStatus }) {
   if (status === 'none') return null;
   const s = STATUS[status];
+  const ref = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+
+    const target = ref.current;
+    const group = target.closest('[data-badge-group]');
+    const badges = group ? group.querySelectorAll('[data-badge-stamp]') : [target];
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        badges,
+        {
+          opacity: 0,
+          rotate: -8,
+          scale: 1.4,
+          transformOrigin: 'center center',
+        },
+        {
+          opacity: 1,
+          rotate: 0,
+          scale: 1,
+          duration: 0.4,
+          ease: 'back.out(2)',
+          stagger: 0.08,
+        },
+      );
+    }, group ?? target.parentElement ?? undefined);
+
+    return () => ctx.revert();
+  }, [status]);
+
   return (
     <span
-      className={`inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${s.className}`}
+      ref={ref}
+      data-badge-stamp
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] ${s.className}`}
     >
       {s.label}
     </span>
@@ -101,12 +153,67 @@ export function StatusBadge({ status }: { status: RiskStatus }) {
 export function Card({
   children,
   className = '',
+  animateOnMount = false,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  animateOnMount?: boolean;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!animateOnMount || !ref.current) return;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        ref.current,
+        { y: 20, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' },
+      );
+    }, ref);
+
+    return () => ctx.revert();
+  }, [animateOnMount]);
+
+  return (
+    <div
+      ref={ref}
+      data-card-animate={animateOnMount ? 'true' : undefined}
+      className={`rounded-xl border border-stone-200 bg-white shadow-sm ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function CardGroup({
+  children,
+  className = '',
 }: {
   children: React.ReactNode;
   className?: string;
 }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+
+    const cards = ref.current.querySelectorAll('[data-card-animate="true"]');
+    if (!cards.length) return;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        cards,
+        { y: 20, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out', stagger: 0.1 },
+      );
+    }, ref);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <div className={`rounded-xl border border-stone-200 bg-white shadow-sm ${className}`}>
+    <div ref={ref} className={className}>
       {children}
     </div>
   );

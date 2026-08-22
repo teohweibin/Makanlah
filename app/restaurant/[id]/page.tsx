@@ -13,16 +13,18 @@ import {
   RewardLedger,
 } from '@/components/ChainPanels';
 import { CampaignTrigger } from '@/components/CampaignTrigger';
+import { MerchantActionChecklist } from '@/components/MerchantActionChecklist';
 import { TodaysAction, type ActionGroup } from '@/components/TodaysAction';
 import {
   dashboardMetrics,
   evaluateRestaurant,
+  getMerchantActionItems,
   isFirstHand,
   recomputeSustainedReturn,
 } from '@/lib/engine';
 import { loadDataset } from '@/lib/fixtures';
 import { plainCadence, plainFlag, plainGap, plainToldUs } from '@/lib/plain';
-import { Card } from '@/components/ui';
+import { Card, CardGroup } from '@/components/ui';
 
 
 export default async function RestaurantDashboard({
@@ -38,6 +40,7 @@ export default async function RestaurantDashboard({
   const flagged = evaluateRestaurant(ds, id);
   const metrics = dashboardMetrics(ds, id);
   const sustained = recomputeSustainedReturn(ds).filter((r) => r.restaurant_id === id);
+  const actionItems = getMerchantActionItems(ds, id);
   const dinerName = (dinerId: string) =>
     (ds.diners.find((d) => d.id === dinerId)?.name ?? dinerId).replace(' (demo profile)', '');
 
@@ -99,7 +102,7 @@ export default async function RestaurantDashboard({
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <Link
             href="/"
-            className="rounded-full border border-stone-300 bg-white px-3 py-1 text-sm text-stone-500 transition hover:border-stone-400"
+            className="rounded-full border border-[var(--color-ink)]/15 bg-[var(--color-paper)] px-3 py-1 text-sm font-medium text-[var(--color-ink)] transition hover:border-[var(--color-ink)]/30"
           >
             &larr; Makanlah
           </Link>
@@ -109,29 +112,33 @@ export default async function RestaurantDashboard({
               href={`/restaurant/${r.id}`}
               className={`rounded-full border px-3 py-1 text-sm transition ${
                 r.id === id
-                  ? 'border-stone-800 bg-stone-800 text-white'
-                  : 'border-stone-300 bg-white text-stone-600 hover:border-stone-400'
+                  ? 'border-[var(--color-verified)] bg-[var(--color-verified)] text-white'
+                  : 'border-[var(--color-ink)]/15 bg-[var(--color-paper)] text-[var(--color-ink)] hover:border-[var(--color-ink)]/30'
               }`}
             >
               {r.name}
             </Link>
           ))}
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight text-stone-900">{restaurant.name}</h1>
-        <p className="mt-0.5 text-stone-500">{restaurant.tagline}</p>
+        <h1 className="display-font text-3xl font-semibold tracking-tight text-[var(--color-ink)]">
+          {restaurant.name}
+        </h1>
+        <p className="mt-0.5 text-stone-600">{restaurant.tagline}</p>
       </header>
 
       {/* ── 1. today's action ──────────────────────────────────────────── */}
       <section className="mb-10">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-stone-500">
+        <h2 className="display-font mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-stone-500">
           Today&rsquo;s action
         </h2>
         <TodaysAction group={actionGroup} />
       </section>
 
+      <MerchantActionChecklist merchantId={id} items={actionItems} />
+
       {/* ── 2. who needs attention ─────────────────────────────────────── */}
       <section className="mb-10">
-        <h2 className="mb-1 text-lg font-semibold tracking-tight text-stone-900">
+        <h2 className="display-font mb-1 text-2xl font-semibold tracking-tight text-stone-900">
           Regulars who&rsquo;ve drifted
         </h2>
         <p className="mb-4 text-sm text-stone-500">
@@ -146,18 +153,18 @@ export default async function RestaurantDashboard({
             </p>
           </Card>
         ) : (
-          <ul className="space-y-3">
+          <CardGroup className="space-y-3">
             {rows.map(({ flag, diner, headline, plain, presentation, toldUs }) => (
               <li key={flag.id}>
-                <Card className="overflow-hidden">
+                <Card className="overflow-hidden" animateOnMount>
                   {/* the human part, first and biggest */}
                   <div className="flex items-start gap-3 px-4 pt-4">
                     <span className="text-2xl" aria-hidden>
                       {diner.avatar_emoji}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium text-stone-900">
+                      <div className="flex flex-wrap items-center gap-2" data-badge-group>
+                        <span className="display-font text-xl font-semibold text-stone-900">
                           {diner.name.replace(' (demo profile)', '')}
                         </span>
                         <span className="inline-flex items-center gap-1.5 text-sm text-stone-500">
@@ -167,7 +174,9 @@ export default async function RestaurantDashboard({
                             }`}
                             aria-hidden
                           />
-                          {plain.headline}
+                          <span className="display-font text-base uppercase tracking-wide text-stone-600">
+                            {plain.headline}
+                          </span>
                         </span>
                         {flag.evidence_strength === 'verified_with_photo' && (
                           <span
@@ -215,7 +224,7 @@ export default async function RestaurantDashboard({
                 </Card>
               </li>
             ))}
-          </ul>
+          </CardGroup>
         )}
       </section>
 
@@ -248,31 +257,31 @@ export default async function RestaurantDashboard({
 
       {/* ── 4. how it's going ──────────────────────────────────────────── */}
       <section className="mb-10">
-        <h2 className="mb-4 text-lg font-semibold tracking-tight text-stone-900">
+        <h2 className="display-font mb-4 text-2xl font-semibold tracking-tight text-stone-900">
           How it&rsquo;s going
         </h2>
 
-        <div className="space-y-3">
-          <Card className="flex items-center gap-4 p-4">
+        <CardGroup className="space-y-3">
+          <Card className="flex items-center gap-4 p-4" animateOnMount>
             <span className="text-2xl" aria-hidden>
               💌
             </span>
             <p className="text-stone-800">
-              <span className="font-medium text-stone-900">
+              <span className="metric-value display-font text-2xl font-semibold text-stone-900">
                 {metrics.won_back} out of {metrics.interventions_sent}
               </span>{' '}
               came back after you reached out
             </p>
           </Card>
 
-          <Card className="flex items-center gap-4 p-4">
+          <Card className="flex items-center gap-4 p-4" animateOnMount>
             <span className="text-2xl" aria-hidden>
               🔁
             </span>
             <p className="text-stone-800">
               {metrics.sustained_evaluated > 0 ? (
                 <>
-                  <span className="font-medium text-stone-900">
+                  <span className="metric-value display-font text-2xl font-semibold text-stone-900">
                     {metrics.sustained_recovered} out of {metrics.sustained_evaluated}
                   </span>{' '}
                   are still coming regularly — not just once
@@ -289,16 +298,18 @@ export default async function RestaurantDashboard({
             </p>
           </Card>
 
-          <Card className="flex items-center gap-4 p-4">
+          <Card className="flex items-center gap-4 p-4" animateOnMount>
             <span className="text-2xl" aria-hidden>
               👋
             </span>
             <p className="text-stone-800">
-              <span className="font-medium text-stone-900">{rows.length} regulars</span> need your
-              attention
+              <span className="metric-value display-font text-2xl font-semibold text-stone-900">
+                {rows.length} regulars
+              </span>{' '}
+              need your attention
             </p>
           </Card>
-        </div>
+        </CardGroup>
 
         {/* the detail an owner can open if they want it, closed by default */}
         {sustained.length > 0 && (
@@ -341,7 +352,7 @@ export default async function RestaurantDashboard({
 
       {/* ── 5. receipts, last ──────────────────────────────────────────── */}
       <section>
-        <h2 className="mb-1 text-lg font-semibold tracking-tight text-stone-900">
+        <h2 className="display-font mb-1 text-2xl font-semibold tracking-tight text-stone-900">
           Reward History
         </h2>
         <p className="mb-4 text-sm text-stone-500">

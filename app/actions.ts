@@ -39,6 +39,7 @@ export interface ReviewSubmission {
  * — the model proposes evidence quality, our code decides what that is worth.
  */
 export async function submitReview(input: ReviewSubmission) {
+  const { loadDataset } = await import('@/lib/fixtures');
   const ds = loadDataset();
   // Tonight's open order is reviewable too, not just order history.
   const order =
@@ -142,6 +143,7 @@ export async function submitReview(input: ReviewSubmission) {
  * not two.
  */
 export async function acceptWinBack(input: { diner_id: string; restaurant_id: string }) {
+  const { loadDataset } = await import('@/lib/fixtures');
   const ds = loadDataset();
   const diner = ds.diners.find((d) => d.id === input.diner_id);
   if (!diner) throw new Error(`Unknown diner ${input.diner_id}`);

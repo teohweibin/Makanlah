@@ -6,7 +6,8 @@
 // is actually delivered, and the UI says so rather than implying a send that never
 // happened — the invitations themselves are already real and live on each diner's screen.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { gsap } from '@/lib/gsap-config';
 
 export interface CampaignTarget {
   diner_id: string;
@@ -38,6 +39,24 @@ const FILTERS: Array<{ id: FilterId; label: string; match: (t: CampaignTarget) =
 export function CampaignTrigger({ targets }: { targets: CampaignTarget[] }) {
   const [filter, setFilter] = useState<FilterId>('verified');
   const [sentTo, setSentTo] = useState<CampaignTarget[] | null>(null);
+  const groupRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!groupRef.current) return;
+
+    const nodes = groupRef.current.querySelectorAll('[data-animate-on-mount]');
+    if (!nodes.length) return;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        nodes,
+        { y: 12, opacity: 0, scale: 0.98 },
+        { y: 0, opacity: 1, scale: 1, duration: 0.45, ease: 'power2.out', stagger: 0.08 },
+      );
+    }, groupRef);
+
+    return () => ctx.revert();
+  }, []);
 
   // Opting out is not a UI preference to be overridden by a bulk action. Diners who
   // turned nudges off are removed from every group before any filter is applied.
@@ -61,31 +80,38 @@ export function CampaignTrigger({ targets }: { targets: CampaignTarget[] }) {
     return [...counts.values()];
   }, [selected]);
 
+  const filterStyles: Record<FilterId, string> = {
+    all: 'border-[var(--color-ink)]/20 bg-[var(--color-paper)] text-[var(--color-ink)]',
+    verified: 'border-[var(--color-verified)] bg-[var(--color-verified)] text-white',
+    silent: 'border-[var(--color-silent)] bg-[var(--color-silent)] text-white',
+    no_signal: 'border-[var(--color-inferred)] bg-[var(--color-inferred)] text-[var(--color-ink)]',
+  };
+
   if (sentTo) {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-        <p className="font-medium text-emerald-900">
+      <div className="rounded-xl border border-[var(--color-verified)]/20 bg-[var(--color-soft-green)] p-4">
+        <p className="font-medium text-[var(--color-verified)]">
           ✓ Campaign queued for {sentTo.length} diner{sentTo.length === 1 ? '' : 's'}
         </p>
         <ul className="mt-3 space-y-1.5">
           {sentTo.map((t) => (
-            <li key={t.diner_id} className="flex items-center gap-2 text-sm text-emerald-900">
+            <li key={t.diner_id} className="flex items-center gap-2 text-sm text-[var(--color-verified)]">
               <span aria-hidden>{t.avatar_emoji}</span>
               <span>{t.name}</span>
-              <span className="ml-auto rounded bg-white/70 px-2 py-0.5 text-xs">
+              <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-xs text-[var(--color-ink)]">
                 {t.icon} {t.tag_label}
               </span>
             </li>
           ))}
         </ul>
-        <p className="mt-3 border-t border-emerald-200 pt-3 text-xs text-emerald-800">
+        <p className="mt-3 border-t border-[var(--color-verified)]/20 pt-3 text-xs text-[var(--color-verified)]">
           Demo scope: no push notification is actually delivered. Each diner&rsquo;s invitation
           is already live on their own screen — open a diner view to see the real thing.
         </p>
         <button
           type="button"
           onClick={() => setSentTo(null)}
-          className="mt-3 text-sm font-medium text-emerald-900 underline underline-offset-4"
+          className="mt-3 text-sm font-medium text-[var(--color-verified)] underline underline-offset-4"
         >
           Set up another
         </button>
@@ -94,7 +120,7 @@ export function CampaignTrigger({ targets }: { targets: CampaignTarget[] }) {
   }
 
   return (
-    <div>
+    <div ref={groupRef}>
       <div className="flex flex-wrap gap-2">
         {FILTERS.map((f) => {
           const n = reachable.filter(f.match).length;
@@ -104,13 +130,12 @@ export function CampaignTrigger({ targets }: { targets: CampaignTarget[] }) {
               key={f.id}
               type="button"
               onClick={() => setFilter(f.id)}
+              data-animate-on-mount
               className={`rounded-full border px-3 py-1.5 text-sm transition ${
-                active
-                  ? 'border-stone-800 bg-stone-800 text-white'
-                  : 'border-stone-300 bg-white text-stone-700 hover:border-stone-500'
+                active ? filterStyles[f.id] : 'border-[var(--color-ink)]/15 bg-[var(--color-paper)] text-[var(--color-ink)] hover:border-[var(--color-ink)]/30'
               }`}
             >
-              {f.label} <span className={active ? 'text-stone-300' : 'text-stone-400'}>{n}</span>
+              {f.label} <span className={active ? 'text-current/80' : 'text-stone-500'}>{n}</span>
             </button>
           );
         })}
@@ -154,7 +179,8 @@ export function CampaignTrigger({ targets }: { targets: CampaignTarget[] }) {
         type="button"
         disabled={selected.length === 0}
         onClick={() => setSentTo(selected)}
-        className="mt-4 w-full rounded-xl bg-stone-900 px-4 py-3 font-medium text-white transition hover:bg-stone-700 disabled:opacity-40"
+        data-animate-on-mount
+        className="mt-4 w-full rounded-xl bg-[var(--color-verified)] px-4 py-3 font-medium text-white transition hover:bg-[var(--color-verified)]/90 disabled:opacity-40"
       >
         Send to {selected.length} diner{selected.length === 1 ? '' : 's'}
       </button>

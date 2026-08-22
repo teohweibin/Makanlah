@@ -10,14 +10,8 @@ import {
 } from '@/lib/engine';
 import { loadDataset } from '@/lib/fixtures';
 import { getAllSubmittedReviews } from '@/lib/store';
-import {
-  Card,
-  EvidenceBadge,
-  InterventionTag,
-  StatusBadge,
-  evidenceHint,
-  evidenceLabel,
-} from '@/components/ui';
+import { Card, EvidenceBadge, InterventionTag, StatusBadge } from '@/components/ui';
+import { evidenceHint, evidenceLabel } from '@/lib/plain';
 
 const days = (n: number | null) => (n === null ? '—' : `${Number.isInteger(n) ? n : n.toFixed(1)}d`);
 
