@@ -15,25 +15,6 @@ travels with the diner between restaurants.
 
 ---
 
-## Demo route
-
-The fastest path through the whole loop:
-
-| # | Where | What to show |
-|---|---|---|
-| 1 | `/diner` | Write "the chicken was a bit dry", optionally attach a photo |
-| 2 | — | Gemini reads text **and** photo, returns follow-up options written for *this* meal |
-| 3 | — | Tap one → reward confirmation, SPL token minted to the diner's devnet wallet |
-| 4 | `/dashboard` | The diner now appears with the AI's own summary, not a template |
-| 5 | `/diner` → **Use Reward** | 6-digit code, valid 10 minutes |
-| 6 | `/dashboard` → **Redeem a reward** | Enter the code → token **burned on devnet** |
-| 7 | `/diner` | Same reward now reads "Already used" — because the chain says so |
-
-Then switch the dashboard to the second restaurant to show the same wallet recognised
-somewhere it has almost no history.
-
----
-
 ## Stack
 
 | Layer | Choice |
