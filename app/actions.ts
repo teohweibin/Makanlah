@@ -465,3 +465,16 @@ export async function redeemWithCode(input: { code: string }): Promise<RedeemRes
     };
   }
 }
+
+/** Reset all runtime demo data — fresh start for a new demo run. */
+export async function resetDemoData() {
+  const { resetStore } = await import('@/lib/store');
+  const { clearRuntime } = await import('@/lib/persist');
+  resetStore();
+  clearRuntime();
+  revalidatePath('/');
+  revalidatePath('/diner');
+  revalidatePath('/restaurant/rest_warung_mama');
+  revalidatePath('/restaurant/rest_kedai_pakcik');
+  return { ok: true as const };
+}
