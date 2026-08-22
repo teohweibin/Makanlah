@@ -4,12 +4,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { DinerRewards } from '@/components/DinerRewards';
-import { GuidedReview } from '@/components/GuidedReview';
 import { InvitationList } from '@/components/InvitationCard';
 import { NudgeToggle } from '@/components/NudgeToggle';
+import { ReviewFlow } from '@/components/ReviewFlow';
 import { loadDataset } from '@/lib/fixtures';
 import { getInvitationsForDiner, getSubmittedReview } from '@/lib/store';
-import { Card, InterventionTag } from '@/components/ui';
+import { Card } from '@/components/ui';
 
 const DEFAULT_DINER = 'diner_a';
 
@@ -95,7 +95,7 @@ export default async function DinerHub({
         subtitle={
           submitted
             ? undefined
-            : 'A word or two is plenty — we'll ask the rest.'
+            : 'A word or two is plenty \u2014 we\u2019ll ask the rest.'
         }
       >
         {!activeOrder || !restaurant ? (
@@ -175,11 +175,12 @@ export default async function DinerHub({
                 </div>
               </div>
             ) : (
-              <GuidedReview
+              <ReviewFlow
                 orderId={activeOrder.id}
                 restaurantName={restaurant.name}
                 dishes={dishes}
-                hideIntro
+                tags={ds.guidedReviewTags}
+                currency={ds.config.currency}
               />
             )}
           </Card>
