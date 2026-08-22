@@ -22,8 +22,8 @@ interface CodeStore {
   codes: RedemptionCode[];
 }
 
-const globalStore = globalThis as unknown as { __makanlah_codes?: CodeStore };
-const store: CodeStore = (globalStore.__makanlah_codes ??= { codes: [] });
+const globalStore = globalThis as unknown as { __makanlagi_codes?: CodeStore };
+const store: CodeStore = (globalStore.__makanlagi_codes ??= { codes: [] });
 
 const isLive = (c: RedemptionCode, now = Date.now()) => !c.used_at && c.expires_at > now;
 
