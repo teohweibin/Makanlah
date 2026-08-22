@@ -258,3 +258,30 @@ export function getAcceptedInvitations(dinerId: string): Invitation[] {
 export function getAllInvitations(): Invitation[] {
   return [...invitations];
 }
+
+/* ── Kitchen To-Do (Action Items) ────────────────────────────────────────── */
+
+import type { ActionItem } from './types';
+
+const actionItems = ((globalStore.__makanlagi_store as Store & {
+  actionItems?: ActionItem[];
+}).actionItems ??= []);
+
+export function addActionItem(item: ActionItem): void {
+  // Don't duplicate for same quote + restaurant
+  const exists = actionItems.some((a) => a.customerQuote === item.customerQuote && a.restaurantId === item.restaurantId);
+  if (!exists) actionItems.push(item);
+}
+
+export function getActionItemsForRestaurant(restaurantId: string): ActionItem[] {
+  return actionItems.filter((a) => a.restaurantId === restaurantId);
+}
+
+export function markActionItemCompleted(id: string): void {
+  const item = actionItems.find((a) => a.id === id);
+  if (item) item.status = 'completed';
+}
+
+export function getActionItem(id: string): ActionItem | undefined {
+  return actionItems.find((a) => a.id === id);
+}

@@ -1,0 +1,47 @@
+[
+  {
+    "id": "action_bihun_aina",
+    "dinerName": "Aina",
+    "dinerId": "diner_a",
+    "restaurantId": "rest_warung_mama",
+    "customerQuote": "Bihun terlalu lembik, macam porridge dah",
+    "title": "Reduce bihun soaking time",
+    "expertAction": "Reduce bihun soaking time from 10 min to 5-6 min in room temp water. If stir-frying, add bihun in the last 2-3 minutes only, over high heat (wok hei).",
+    "rootCause": "Overcooking or soaking too long before frying",
+    "priority": "quick",
+    "status": "pending",
+    "dishId": "dish_mee_goreng",
+    "dishName": "Mee Goreng Mamak",
+    "createdAt": 1724284800000
+  },
+  {
+    "id": "action_chicken_bryan",
+    "dinerName": "Bryan",
+    "dinerId": "diner_b",
+    "restaurantId": "rest_warung_mama",
+    "customerQuote": "Ayam percik terlalu kering, macam jerky",
+    "title": "Fix dry chicken — reduce grill time",
+    "expertAction": "1) Reduce grilling/frying time by 2-3 minutes. 2) Add 1 tbsp oil or yogurt to marinade. 3) Rest chicken 5 min before serving to retain juices. 4) Use meat thermometer — pull at 74\u00b0C internal, not higher.",
+    "rootCause": "Overcooking or lack of marinade fat/moisture",
+    "priority": "quick",
+    "status": "pending",
+    "dishId": "dish_ayam_percik",
+    "dishName": "Ayam Percik",
+    "createdAt": 1724284800000
+  },
+  {
+    "id": "action_slow_service_chandra",
+    "dinerName": "Chandra",
+    "dinerId": "diner_c",
+    "restaurantId": "rest_warung_mama",
+    "customerQuote": "Waited 30 minutes for my food during lunch, almost walked out",
+    "title": "Speed up peak-hour kitchen flow",
+    "expertAction": "1) Analyze peak-hour order tickets to identify bottleneck station. 2) Add 1 extra prep cook during identified peak windows. 3) Pre-prep mise en place before service to cut cook time by up to 30%. 4) Set target ticket times: appetizers 8 min, mains 15 min.",
+    "rootCause": "Kitchen bottleneck during peak hours, understaffing, or poor order sequencing",
+    "priority": "medium",
+    "status": "pending",
+    "dishId": null,
+    "dishName": null,
+    "createdAt": 1724284800000
+  }
+]

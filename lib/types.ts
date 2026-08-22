@@ -281,3 +281,21 @@ export interface Invitation {
   mint_signature: string | null;
   chain_error: string | null;
 }
+
+/* ── Kitchen To-Do (Action Items from recommendation engine) ─────────────── */
+
+export interface ActionItem {
+  id: string;
+  dinerName: string;
+  dinerId: string;
+  restaurantId: string;
+  customerQuote: string;
+  title: string;
+  expertAction: string;
+  rootCause: string;
+  priority: 'quick' | 'medium' | 'urgent';
+  status: 'pending' | 'completed';
+  dishId: string | null;
+  dishName: string | null;
+  createdAt: number;
+}
