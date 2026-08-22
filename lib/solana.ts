@@ -36,9 +36,8 @@ import bs58 from 'bs58';
 const CLUSTER = process.env.NEXT_PUBLIC_SOLANA_CLUSTER || 'devnet';
 const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || clusterApiUrl('devnet');
 
-export function explorerUrl(kind: 'address' | 'tx', value: string): string {
-  return `https://explorer.solana.com/${kind}/${value}?cluster=${CLUSTER}`;
-}
+import { explorerUrl } from './solana-links.ts';
+export { explorerUrl };
 
 let connection: Connection | null = null;
 export function getConnection(): Connection {

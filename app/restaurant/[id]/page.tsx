@@ -13,6 +13,7 @@ import {
 } from '@/components/ChainPanels';
 import { DinerActionCard, type DinerCardData } from '@/components/DinerActionCard';
 import { DonutChart } from '@/components/DonutChart';
+import { RedeemPanel } from '@/components/RedeemPanel';
 import {
   computePriority,
   dashboardMetrics,
@@ -140,6 +141,11 @@ export default async function RestaurantDashboard({
           label="stayed"
           color="var(--color-violet)"
         />
+      </section>
+
+      {/* ── 柜台核销 reward ────────────────────────────────────────────── */}
+      <section className="mb-8">
+        <RedeemPanel restaurantName={restaurant.name} />
       </section>
 
       {/* ── ZONE 2: WHO NEEDS YOU ──────────────────────────────────────── */}
