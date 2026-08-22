@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache';
 import { evaluateDiner, parseGuidedTag, selectIntervention } from '@/lib/engine';
-import { loadDataset } from '@/lib/fixtures';
 import { isChainConfigured, issueRewardToken } from '@/lib/solana';
 import { addAcceptedInvite, addSubmittedReview, setNudgePreference } from '@/lib/store';
 import type { EvidenceStrength, ReasonType, Review } from '@/lib/types';
@@ -21,6 +20,7 @@ export interface ReviewSubmission {
  * reward here, and the win-back intervention there.
  */
 export async function submitReview(input: ReviewSubmission) {
+  const { loadDataset } = await import('@/lib/fixtures');
   const ds = loadDataset();
   // Tonight's open order is reviewable too, not just order history.
   const order =
@@ -104,6 +104,7 @@ export async function submitReview(input: ReviewSubmission) {
  * not two.
  */
 export async function acceptWinBack(input: { diner_id: string; restaurant_id: string }) {
+  const { loadDataset } = await import('@/lib/fixtures');
   const ds = loadDataset();
   const diner = ds.diners.find((d) => d.id === input.diner_id);
   if (!diner) throw new Error(`Unknown diner ${input.diner_id}`);
