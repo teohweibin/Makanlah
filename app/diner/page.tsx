@@ -187,6 +187,7 @@ export default async function DinerHub({
                 restaurantName={restaurant.name}
                 dishes={dishes}
                 tags={ds.guidedReviewTags}
+                hideIntro
               />
             )}
           </Card>

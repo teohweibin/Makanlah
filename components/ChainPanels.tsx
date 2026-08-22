@@ -14,11 +14,14 @@ import {
 import { Card } from '@/components/ui';
 
 const STATUS: Record<RedemptionStatus, { label: string; className: string }> = {
-  unredeemed: { label: 'Unredeemed', className: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
-  redeemed: { label: 'Redeemed', className: 'bg-stone-200 text-stone-700 border-stone-300' },
-  not_found: { label: 'Not in wallet', className: 'bg-amber-100 text-amber-900 border-amber-300' },
-  not_minted: { label: 'Not minted', className: 'bg-stone-100 text-stone-600 border-stone-300' },
-  unavailable: { label: 'Chain unavailable', className: 'bg-rose-100 text-rose-900 border-rose-300' },
+  unredeemed: { label: 'Reward not yet used', className: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+  redeemed: { label: 'Reward used ✓', className: 'bg-stone-200 text-stone-700 border-stone-300' },
+  not_found: { label: 'Not in their wallet', className: 'bg-amber-100 text-amber-900 border-amber-300' },
+  not_minted: { label: 'Not issued yet', className: 'bg-stone-100 text-stone-600 border-stone-300' },
+  unavailable: {
+    label: "Can't check right now",
+    className: 'bg-rose-100 text-rose-900 border-rose-300',
+  },
 };
 
 function ChainBadge({ status }: { status: RedemptionStatus }) {
@@ -35,7 +38,7 @@ function ChainBadge({ status }: { status: RedemptionStatus }) {
 function NotConfigured() {
   return (
     <Card className="p-5">
-      <h3 className="font-medium text-stone-900">Reward tokens — read from the chain</h3>
+      <h3 className="font-medium text-stone-900">Reward History</h3>
       <p className="mt-2 text-sm text-stone-600">
         Devnet is not configured yet, so there is nothing to read. Run{' '}
         <code className="rounded bg-stone-100 px-1.5 py-0.5">node scripts/solana-setup.mjs</code>{' '}
@@ -76,12 +79,7 @@ export async function RewardLedger({ restaurantId }: { restaurantId: string }) {
   return (
     <Card className="overflow-hidden">
       <div className="border-b border-stone-200 px-4 py-3">
-        <h3 className="font-medium text-stone-900">Reward tokens — read from the chain</h3>
-        <p className="mt-0.5 text-sm text-stone-500">
-          Redemption status below comes from a live devnet query against each token
-          account, not from our database. Holding the token means unredeemed; it is burned
-          when spent.
-        </p>
+        <h3 className="font-medium text-stone-900">Rewards you&rsquo;ve sent</h3>
       </div>
 
       {rows.length === 0 ? (
@@ -96,8 +94,12 @@ export async function RewardLedger({ restaurantId }: { restaurantId: string }) {
                   <ChainBadge status={chain.status} />
                 </div>
                 <p className="text-sm text-stone-500">
-                  {reward.intervention_type} ·{' '}
-                  {reward.issued_days_ago === 0 ? 'issued today' : `${reward.issued_days_ago}d ago`}
+                  {ds.interventionLookup.presentation[reward.intervention_type]?.icon}{' '}
+                  {ds.interventionLookup.presentation[reward.intervention_type]?.tag_label} ·
+                  sent{' '}
+                  {reward.issued_days_ago === 0
+                    ? 'today'
+                    : `${reward.issued_days_ago} days ago`}
                 </p>
                 {(chain.error || reward.chain_error) && (
                   <p className="mt-0.5 text-xs text-rose-700">
@@ -107,9 +109,6 @@ export async function RewardLedger({ restaurantId }: { restaurantId: string }) {
               </div>
 
               <div className="text-right text-xs">
-                {chain.amount !== null && (
-                  <div className="text-stone-500">on-chain balance: {chain.amount}</div>
-                )}
                 {reward.mint_address ? (
                   <a
                     href={explorerUrl('address', reward.mint_address)}
@@ -174,10 +173,10 @@ export async function CrossRestaurantRecognition({ restaurantId }: { restaurantI
   return (
     <Card className="overflow-hidden">
       <div className="border-b border-stone-200 px-4 py-3">
-        <h3 className="font-medium text-stone-900">Wallet recognition</h3>
+        <h3 className="font-medium text-stone-900">Recognised from elsewhere</h3>
         <p className="mt-0.5 text-sm text-stone-500">
-          Queried by wallet address, not by our customer table. {restaurant?.name} can see a
-          diner&rsquo;s reward history even for rewards it never issued.
+          {restaurant?.name} can see rewards a diner earned at other restaurants — their
+          history belongs to them, not to any one venue.
         </p>
       </div>
 
@@ -254,7 +253,7 @@ export async function CrossRestaurantRecognition({ restaurantId }: { restaurantI
 export function ChainPanelSkeleton({ label }: { label: string }) {
   return (
     <Card className="p-5">
-      <p className="text-sm text-stone-500">Querying devnet — {label}…</p>
+      <p className="text-sm text-stone-500">{label}…</p>
     </Card>
   );
 }

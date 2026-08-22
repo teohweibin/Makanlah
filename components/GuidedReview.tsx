@@ -14,6 +14,7 @@ export function GuidedReview({
   dishes,
   tags,
   redirectTo,
+  hideIntro,
 }: {
   orderId: string;
   restaurantName: string;
@@ -22,6 +23,8 @@ export function GuidedReview({
   tags: GuidedReviewTag[];
   /** Where to go after submitting. Omit to confirm in place on the same page. */
   redirectTo?: string;
+  /** Suppress the step-1 title when the surrounding page already asks the question. */
+  hideIntro?: boolean;
 }) {
   const router = useRouter();
   const [stage, setStage] = useState<Stage>('write');
@@ -101,10 +104,16 @@ export function GuidedReview({
     return (
       <div>
         <Step n={1} of={3} label="How was it?" />
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-stone-900">
-          How was {restaurantName}?
-        </h1>
-        <p className="mt-1 text-stone-500">A word or two is plenty — we&rsquo;ll ask the rest.</p>
+        {!hideIntro && (
+          <>
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-stone-900">
+              How was {restaurantName}?
+            </h1>
+            <p className="mt-1 text-stone-500">
+              A word or two is plenty — we&rsquo;ll ask the rest.
+            </p>
+          </>
+        )}
 
         <div className="mt-5 flex gap-2">
           {[1, 2, 3, 4, 5].map((n) => (

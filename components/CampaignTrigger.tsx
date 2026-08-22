@@ -24,9 +24,9 @@ type FilterId = 'all' | 'verified' | 'silent' | 'no_signal';
 
 const FILTERS: Array<{ id: FilterId; label: string; match: (t: CampaignTarget) => boolean }> = [
   { id: 'all', label: 'Everyone flagged', match: () => true },
-  { id: 'verified', label: 'Verified reasons', match: (t) => t.evidence_strength === 'strong' },
-  { id: 'silent', label: 'Silent churners', match: (t) => t.status === 'silent_churn' },
-  { id: 'no_signal', label: 'No signal', match: (t) => t.evidence_strength === 'none' },
+  { id: 'verified', label: 'They told us why', match: (t) => t.evidence_strength === 'strong' },
+  { id: 'silent', label: 'Browsing but not ordering', match: (t) => t.status === 'silent_churn' },
+  { id: 'no_signal', label: 'Just been a while', match: (t) => t.evidence_strength === 'none' },
 ];
 
 export function CampaignTrigger({ targets }: { targets: CampaignTarget[] }) {
@@ -126,15 +126,21 @@ export function CampaignTrigger({ targets }: { targets: CampaignTarget[] }) {
             ))}
           </div>
 
-          <p className="mt-3 text-sm text-stone-500">
-            They will not all get the same message:{' '}
-            {spread.map((s, i) => (
-              <span key={s.label}>
-                {i > 0 && ', '}
-                {s.icon} {s.n} &times; {s.label}
-              </span>
-            ))}
-          </p>
+          {/* The trust-building beat: one tap, but not one identical blast. */}
+          <div className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3.5">
+            <p className="font-medium text-stone-900">
+              They won&rsquo;t all get the same message
+            </p>
+            <ul className="mt-2 space-y-1">
+              {spread.map((s) => (
+                <li key={s.label} className="flex items-center gap-2 text-sm text-stone-700">
+                  <span aria-hidden>{s.icon}</span>
+                  <span className="font-medium">{s.n}</span>
+                  <span className="text-stone-600">{s.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </>
       )}
 

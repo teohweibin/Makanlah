@@ -1,3 +1,9 @@
+// Restaurant owner dashboard.
+//
+// Ordering principle: what to DO comes first, who it concerns second, how it's going
+// third, and the receipts last. An owner between lunch and dinner service should be able
+// to act correctly from the top of this page without reading the rest of it.
+
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -7,22 +13,12 @@ import {
   RewardLedger,
 } from '@/components/ChainPanels';
 import { CampaignTrigger } from '@/components/CampaignTrigger';
+import { TodaysAction, type ActionGroup } from '@/components/TodaysAction';
 import { dashboardMetrics, evaluateRestaurant, recomputeSustainedReturn } from '@/lib/engine';
 import { loadDataset } from '@/lib/fixtures';
-import type { ReasonType } from '@/lib/types';
-import { Card, EvidenceBadge, InterventionTag, StatusBadge, evidenceHint } from '@/components/ui';
+import { plainCadence, plainFlag, plainGap, plainToldUs } from '@/lib/plain';
+import { Card } from '@/components/ui';
 
-const REASON_LABEL: Record<ReasonType, string> = {
-  dish_issue: 'Something was wrong with a dish',
-  wait_time: 'Waited too long',
-  declining_spend: 'Spending less each visit',
-  silent_churn: 'Looking, not ordering',
-  no_signal: 'Reason unknown',
-  none: '—',
-};
-
-const pct = (n: number) => `${Math.round(n * 100)}%`;
-const days = (n: number | null) => (n === null ? '—' : `${Number.isInteger(n) ? n : n.toFixed(1)}d`);
 
 export default async function RestaurantDashboard({
   params,
@@ -38,13 +34,70 @@ export default async function RestaurantDashboard({
   const metrics = dashboardMetrics(ds, id);
   const sustained = recomputeSustainedReturn(ds).filter((r) => r.restaurant_id === id);
   const dinerName = (dinerId: string) =>
-    ds.diners.find((d) => d.id === dinerId)?.name ?? dinerId;
+    (ds.diners.find((d) => d.id === dinerId)?.name ?? dinerId).replace(' (demo profile)', '');
+
+  /* ── decide the one thing worth doing today ───────────────────────────── */
+
+  const rows = flagged.map((f) => {
+    const dishName = f.flag.related_dish_id
+      ? (restaurant.known_dishes.find((d) => d.id === f.flag.related_dish_id)?.name ?? null)
+      : null;
+    const toldUs = plainToldUs(f.flag.reason_type, dishName);
+    return {
+      ...f,
+      dishName,
+      toldUs,
+      plain: plainFlag(f.flag.status, f.flag.evidence_strength, f.flag.reason_type, toldUs),
+      presentation: ds.interventionLookup.presentation[f.intervention_type],
+    };
+  });
+
+  // Opted-out diners can never be in an action group — the Settings toggle is binding.
+  const reachable = rows.filter((r) => r.diner.notify_opt_in);
+  const buckets: Array<{ key: ActionGroup['key']; members: typeof reachable }> = [
+    { key: 'told_us', members: reachable.filter((r) => r.flag.evidence_strength === 'strong') },
+    { key: 'browsing', members: reachable.filter((r) => r.flag.status === 'silent_churn') },
+    {
+      key: 'been_a_while',
+      members: reachable.filter(
+        (r) => r.flag.evidence_strength !== 'strong' && r.flag.status !== 'silent_churn',
+      ),
+    },
+  ];
+  const top = buckets.find((b) => b.members.length > 0);
+  const actionGroup: ActionGroup | null = top
+    ? {
+        key: top.key,
+        diner_names: top.members.map((m) => m.diner.name.replace(' (demo profile)', '')),
+        spread: [
+          ...top.members
+            .reduce((acc, m) => {
+              const cur = acc.get(m.intervention_type);
+              if (cur) cur.n += 1;
+              else
+                acc.set(m.intervention_type, {
+                  icon: m.presentation.icon,
+                  label: m.presentation.tag_label,
+                  n: 1,
+                });
+              return acc;
+            }, new Map<string, { icon: string; label: string; n: number }>())
+            .values(),
+        ],
+      }
+    : null;
 
   return (
-    <main className="mx-auto max-w-5xl px-5 py-8">
+    <main className="mx-auto max-w-3xl px-5 py-8">
       {/* ── header ─────────────────────────────────────────────────────── */}
-      <header className="mb-8">
+      <header className="mb-7">
         <div className="mb-4 flex flex-wrap items-center gap-2">
+          <Link
+            href="/"
+            className="rounded-full border border-stone-300 bg-white px-3 py-1 text-sm text-stone-500 transition hover:border-stone-400"
+          >
+            &larr; Makanlah
+          </Link>
           {ds.restaurants.map((r) => (
             <Link
               key={r.id}
@@ -59,240 +112,244 @@ export default async function RestaurantDashboard({
             </Link>
           ))}
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight text-stone-900">{restaurant.name}</h1>
-        <p className="mt-1 text-stone-500">{restaurant.tagline}</p>
-        {restaurant.is_struggling && (
-          <Link
-            href="/discover"
-            className="mt-3 inline-block rounded-lg bg-amber-50 px-3 py-1.5 text-sm text-amber-900 underline decoration-amber-300 underline-offset-4 ring-1 ring-amber-200 transition hover:bg-amber-100"
-          >
-            Flagged as struggling — included in the Discover &amp; Support pool &rarr;
-          </Link>
-        )}
+        <h1 className="text-2xl font-semibold tracking-tight text-stone-900">{restaurant.name}</h1>
+        <p className="mt-0.5 text-stone-500">{restaurant.tagline}</p>
       </header>
 
-      {/* ── metrics ────────────────────────────────────────────────────── */}
+      {/* ── 1. today's action ──────────────────────────────────────────── */}
       <section className="mb-10">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-stone-500">
-          Retention metrics
+          Today&rsquo;s action
         </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Card className="p-4">
-            <div className="text-xs font-medium uppercase tracking-wide text-stone-500">
-              Win-back rate
-            </div>
-            <div className="mt-1 text-3xl font-semibold text-stone-900">
-              {pct(metrics.win_back_rate)}
-            </div>
-            <div className="mt-1 text-sm text-stone-500">
-              {metrics.won_back} of {metrics.interventions_sent} interventions returned
-            </div>
-          </Card>
-
-          <Card className="p-4">
-            <div className="text-xs font-medium uppercase tracking-wide text-stone-500">
-              Sustained return
-            </div>
-            <div className="mt-1 text-3xl font-semibold text-stone-900">
-              {metrics.sustained_evaluated ? pct(metrics.sustained_return_rate) : '—'}
-            </div>
-            <div className="mt-1 text-sm text-stone-500">
-              {metrics.sustained_recovered} of {metrics.sustained_evaluated} back to normal cadence
-              {metrics.sustained_pending > 0 && ` · ${metrics.sustained_pending} pending`}
-            </div>
-          </Card>
-
-          <Card className="p-4">
-            <div className="text-xs font-medium uppercase tracking-wide text-stone-500">
-              Currently flagged
-            </div>
-            <div className="mt-1 text-3xl font-semibold text-stone-900">{flagged.length}</div>
-            <div className="mt-1 text-sm text-stone-500">
-              {flagged.filter((f) => f.flag.evidence_strength === 'strong').length} with a verified
-              reason
-            </div>
-          </Card>
-        </div>
-
-        {/* sustained return detail — the metric that separates a real fix from a coupon */}
-        <Card className="mt-4 overflow-hidden">
-          <div className="border-b border-stone-200 px-4 py-3">
-            <h3 className="font-medium text-stone-900">Sustained return trend</h3>
-            <p className="mt-0.5 text-sm text-stone-500">
-              Did they stay, or did they take the reward and leave? Measured 30 days after a
-              win-back order — recovered means their cadence is back within &plusmn;
-              {pct(ds.config.sustained_return_tolerance)} of baseline.
-            </p>
-          </div>
-          {sustained.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-stone-500">No win-back history yet.</p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-stone-200 text-left text-xs uppercase tracking-wide text-stone-500">
-                  <th className="px-4 py-2 font-medium">Diner</th>
-                  <th className="px-4 py-2 font-medium">Baseline</th>
-                  <th className="px-4 py-2 font-medium">After win-back</th>
-                  <th className="px-4 py-2 font-medium">Target band</th>
-                  <th className="px-4 py-2 font-medium">Outcome</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sustained.map((r) => {
-                  const lo = r.baseline_cadence * (1 - ds.config.sustained_return_tolerance);
-                  const hi = r.baseline_cadence * (1 + ds.config.sustained_return_tolerance);
-                  const tone =
-                    r.status === 'recovered'
-                      ? 'text-emerald-700'
-                      : r.status === 'not_recovered'
-                        ? 'text-rose-700'
-                        : 'text-stone-500';
-                  return (
-                    <tr key={r.diner_id} className="border-b border-stone-100 last:border-0">
-                      <td className="px-4 py-2.5 text-stone-800">{dinerName(r.diner_id)}</td>
-                      <td className="px-4 py-2.5 text-stone-600">{days(r.baseline_cadence)}</td>
-                      <td className="px-4 py-2.5 text-stone-600">
-                        {days(r.post_win_back_cadence_30d)}
-                      </td>
-                      <td className="px-4 py-2.5 text-stone-500">
-                        {days(lo)} – {days(hi)}
-                      </td>
-                      <td className={`px-4 py-2.5 font-medium ${tone}`}>
-                        {r.status.replace('_', ' ')}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </Card>
+        <TodaysAction group={actionGroup} />
       </section>
 
-      {/* ── one-tap campaign ───────────────────────────────────────────── */}
-      {flagged.length > 0 && (
+      {/* ── 2. who needs attention ─────────────────────────────────────── */}
+      <section className="mb-10">
+        <h2 className="mb-1 text-lg font-semibold tracking-tight text-stone-900">
+          Regulars who&rsquo;ve drifted
+        </h2>
+        <p className="mb-4 text-sm text-stone-500">
+          The ones who told you why come first — those are the easiest to win back.
+        </p>
+
+        {rows.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-stone-600">Nobody&rsquo;s drifting right now.</p>
+            <p className="mt-1 text-sm text-stone-500">
+              We only flag someone once they have enough visits for us to know their rhythm.
+            </p>
+          </Card>
+        ) : (
+          <ul className="space-y-3">
+            {rows.map(({ flag, diner, headline, plain, presentation, toldUs }) => (
+              <li key={flag.id}>
+                <Card className="overflow-hidden">
+                  {/* the human part, first and biggest */}
+                  <div className="flex items-start gap-3 px-4 pt-4">
+                    <span className="text-2xl" aria-hidden>
+                      {diner.avatar_emoji}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-stone-900">
+                          {diner.name.replace(' (demo profile)', '')}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 text-sm text-stone-500">
+                          <span
+                            className={`h-2 w-2 rounded-full ${
+                              plain.tone === 'amber' ? 'bg-amber-500' : 'bg-stone-400'
+                            }`}
+                            aria-hidden
+                          />
+                          {plain.headline}
+                        </span>
+                        {!diner.notify_opt_in && (
+                          <span className="rounded bg-stone-100 px-1.5 py-0.5 text-[11px] text-stone-500">
+                            nudges off
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-stone-600">{plain.detail}</p>
+                    </div>
+                  </div>
+
+                  {/* the message they'd receive — the most human thing here */}
+                  <div className="mx-4 mt-3 rounded-xl border border-stone-200 bg-stone-50 p-3.5">
+                    <p className="text-xs font-medium uppercase tracking-wide text-stone-400">
+                      What we&rsquo;d send them
+                    </p>
+                    <p className="mt-1 flex items-start gap-2 text-lg font-medium leading-snug text-stone-900">
+                      <span aria-hidden>{presentation.icon}</span>
+                      <span>&ldquo;{headline}&rdquo;</span>
+                    </p>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-stone-100 px-4 py-2.5 text-sm text-stone-500">
+                    <span>Last visit {plainGap(flag.days_since_last_order)}</span>
+                    <span>Usually {plainCadence(flag.baseline_cadence)}</span>
+                    <Link
+                      href={`/restaurant/${id}/diner/${diner.id}`}
+                      className="ml-auto font-medium text-stone-600 underline underline-offset-4 hover:text-stone-900"
+                    >
+                      See the full story &rarr;
+                    </Link>
+                  </div>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* ── 3. reach a group ───────────────────────────────────────────── */}
+      {rows.length > 0 && (
         <section className="mb-10">
-          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-stone-500">
-            Win-back campaign
+          <h2 className="mb-1 text-lg font-semibold tracking-tight text-stone-900">
+            Reach a group instead
           </h2>
           <p className="mb-4 text-sm text-stone-500">
-            Pick a group, send in one tap — each diner still gets the intervention their own
-            evidence earned.
+            Pick who to contact, and we&rsquo;ll write each message to fit their reason.
           </p>
           <Card className="p-4">
             <CampaignTrigger
-              targets={flagged.map(({ flag, diner, intervention_type }) => {
-                const p = ds.interventionLookup.presentation[intervention_type];
-                return {
-                  diner_id: diner.id,
-                  name: diner.name,
-                  avatar_emoji: diner.avatar_emoji,
-                  evidence_strength: flag.evidence_strength,
-                  status: flag.status,
-                  intervention_type,
-                  icon: p.icon,
-                  tag_label: p.tag_label,
-                  notify_opt_in: diner.notify_opt_in,
-                };
-              })}
+              targets={rows.map(({ flag, diner, intervention_type, presentation }) => ({
+                diner_id: diner.id,
+                name: diner.name,
+                avatar_emoji: diner.avatar_emoji,
+                evidence_strength: flag.evidence_strength,
+                status: flag.status,
+                intervention_type,
+                icon: presentation.icon,
+                tag_label: presentation.tag_label,
+                notify_opt_in: diner.notify_opt_in,
+              }))}
             />
           </Card>
         </section>
       )}
 
-      {/* ── on-chain ───────────────────────────────────────────────────── */}
+      {/* ── 4. how it's going ──────────────────────────────────────────── */}
       <section className="mb-10">
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-stone-500">
-          On-chain rewards
+        <h2 className="mb-4 text-lg font-semibold tracking-tight text-stone-900">
+          How it&rsquo;s going
+        </h2>
+
+        <div className="space-y-3">
+          <Card className="flex items-center gap-4 p-4">
+            <span className="text-2xl" aria-hidden>
+              💌
+            </span>
+            <p className="text-stone-800">
+              <span className="font-medium text-stone-900">
+                {metrics.won_back} out of {metrics.interventions_sent}
+              </span>{' '}
+              came back after you reached out
+            </p>
+          </Card>
+
+          <Card className="flex items-center gap-4 p-4">
+            <span className="text-2xl" aria-hidden>
+              🔁
+            </span>
+            <p className="text-stone-800">
+              {metrics.sustained_evaluated > 0 ? (
+                <>
+                  <span className="font-medium text-stone-900">
+                    {metrics.sustained_recovered} out of {metrics.sustained_evaluated}
+                  </span>{' '}
+                  are still coming regularly — not just once
+                </>
+              ) : (
+                'No one has reached the 30-day mark yet — check back soon'
+              )}
+              {metrics.sustained_pending > 0 && (
+                <span className="text-stone-500">
+                  {' '}
+                  ({metrics.sustained_pending} still too early to tell)
+                </span>
+              )}
+            </p>
+          </Card>
+
+          <Card className="flex items-center gap-4 p-4">
+            <span className="text-2xl" aria-hidden>
+              👋
+            </span>
+            <p className="text-stone-800">
+              <span className="font-medium text-stone-900">{rows.length} regulars</span> need your
+              attention
+            </p>
+          </Card>
+        </div>
+
+        {/* the detail an owner can open if they want it, closed by default */}
+        {sustained.length > 0 && (
+          <details className="mt-3 rounded-xl border border-stone-200 bg-white">
+            <summary className="cursor-pointer px-4 py-3 text-sm text-stone-600">
+              Show me who those numbers are
+            </summary>
+            <ul className="divide-y divide-stone-100 border-t border-stone-100">
+              {sustained.map((r) => (
+                <li key={r.diner_id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+                  <span className="text-stone-800">{dinerName(r.diner_id)}</span>
+                  <span className="text-stone-500">
+                    used to come {plainCadence(r.baseline_cadence)}
+                  </span>
+                  <span
+                    className={`ml-auto font-medium ${
+                      r.status === 'recovered'
+                        ? 'text-emerald-700'
+                        : r.status === 'not_recovered'
+                          ? 'text-rose-700'
+                          : 'text-stone-500'
+                    }`}
+                  >
+                    {r.status === 'recovered'
+                      ? 'back to normal'
+                      : r.status === 'not_recovered'
+                        ? 'came once, then quiet'
+                        : 'too early to tell'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="border-t border-stone-100 px-4 py-2.5 text-xs text-stone-400">
+              &ldquo;Back to normal&rdquo; means they&rsquo;re visiting about as often as they
+              used to, measured a month after they returned — not just one visit.
+            </p>
+          </details>
+        )}
+      </section>
+
+      {/* ── 5. receipts, last ──────────────────────────────────────────── */}
+      <section>
+        <h2 className="mb-1 text-lg font-semibold tracking-tight text-stone-900">
+          Reward History
         </h2>
         <p className="mb-4 text-sm text-stone-500">
-          Everything in this section is a live devnet query. Our JSON is not consulted for
-          redemption status.
+          Every reward you&rsquo;ve given, and whether it&rsquo;s been used. Checked against the
+          diner&rsquo;s own wallet, so it can&rsquo;t be quietly changed.
         </p>
         <div className="space-y-4">
-          <Suspense fallback={<ChainPanelSkeleton label="reward redemption status" />}>
+          <Suspense fallback={<ChainPanelSkeleton label="checking rewards" />}>
             <RewardLedger restaurantId={id} />
           </Suspense>
-          <Suspense fallback={<ChainPanelSkeleton label="wallet holdings" />}>
+          <Suspense fallback={<ChainPanelSkeleton label="checking wallets" />}>
             <CrossRestaurantRecognition restaurantId={id} />
           </Suspense>
         </div>
       </section>
 
-      {/* ── at-risk list ───────────────────────────────────────────────── */}
-      <section>
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-stone-500">
-          Diners at risk
-        </h2>
-        <p className="mb-4 text-sm text-stone-500">
-          Sorted by evidence strength — the ones who actually told us why come first.
-        </p>
-
-        {flagged.length === 0 ? (
-          <Card className="p-8 text-center">
-            <p className="text-stone-600">No diners flagged here.</p>
-            <p className="mt-1 text-sm text-stone-500">
-              Diners need at least {ds.config.min_orders_for_baseline} orders before a baseline
-              cadence exists — without one we deliberately do not guess.
-            </p>
-          </Card>
-        ) : (
-          <ul className="space-y-3">
-            {flagged.map(({ flag, diner, intervention_type, headline }) => {
-              const p = ds.interventionLookup.presentation[intervention_type];
-              return (
-                <li key={flag.id}>
-                  <Card className="p-4 transition hover:border-stone-300">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="flex items-start gap-3">
-                        <span className="text-2xl" aria-hidden>
-                          {diner.avatar_emoji}
-                        </span>
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium text-stone-900">{diner.name}</span>
-                            <StatusBadge status={flag.status} />
-                            <EvidenceBadge strength={flag.evidence_strength} />
-                          </div>
-                          <p className="mt-1 text-stone-700">{REASON_LABEL[flag.reason_type]}</p>
-                          <p className="mt-1 max-w-2xl text-sm text-stone-500">
-                            {flag.evidence_note}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="text-right text-sm text-stone-500">
-                        <div>
-                          Last order <span className="text-stone-800">{flag.days_since_last_order}d</span> ago
-                        </div>
-                        <div>
-                          Usually every{' '}
-                          <span className="text-stone-800">{days(flag.baseline_cadence)}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-stone-100 pt-3">
-                      <InterventionTag icon={p.icon} label={p.tag_label} color={p.tag_color} />
-                      <span className="text-sm text-stone-700">&ldquo;{headline}&rdquo;</span>
-                      <Link
-                        href={`/restaurant/${id}/diner/${diner.id}`}
-                        className="ml-auto text-sm font-medium text-stone-600 underline underline-offset-4 hover:text-stone-900"
-                      >
-                        Why this diner &rarr;
-                      </Link>
-                    </div>
-                  </Card>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-
-        <p className="mt-4 text-xs text-stone-400">
-          {evidenceHint('strong')} · {evidenceHint('weak')} · {evidenceHint('none')}
-        </p>
-      </section>
+      {restaurant.is_struggling && (
+        <Link
+          href="/discover"
+          className="mt-8 block rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-200 transition hover:bg-amber-100"
+        >
+          You&rsquo;re listed in Discover &amp; Support — diners earn extra rewards for eating
+          here &rarr;
+        </Link>
+      )}
     </main>
   );
 }
