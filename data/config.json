@@ -6,5 +6,9 @@
   "sustained_return_eval_days": 30,
   "sustained_return_tolerance": 0.2,
   "declining_spend_threshold": 0.25,
-  "currency": "MYR"
+  "currency": "MYR",
+  "max_reviews_per_day": 3,
+  "max_rebate_per_customer_per_month_myr": 100,
+  "daily_rebate_budget_myr": 500,
+  "per_customer_rebate_cap_myr": 50
 }

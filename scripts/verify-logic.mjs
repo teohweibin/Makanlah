@@ -24,7 +24,7 @@ const rule = '─'.repeat(78);
 const pct = (n) => `${Math.round(n * 100)}%`;
 const num = (n) => (n === null ? 'n/a' : Number.isInteger(n) ? String(n) : n.toFixed(2));
 
-console.log(`\n${rule}\n  MAKANLAH — core logic run against mock fixtures\n${rule}`);
+console.log(`\n${rule}\n  MAKANLAGI — core logic run against mock fixtures\n${rule}`);
 console.log(`  config: at_risk = days_since > ${ds.config.at_risk_multiplier} x baseline`
   + ` | min ${ds.config.min_orders_for_baseline} orders`
   + ` | silent-churn window ${ds.config.silent_churn_window_days}d`

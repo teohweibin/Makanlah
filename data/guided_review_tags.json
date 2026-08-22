@@ -1,10 +1,16 @@
 [
-  { "id": "dish_dry", "label": "The dish was dry", "reason_type": "dish_issue", "requires_dish": true, "keywords": ["dry", "kering", "tough", "overcooked", "hard"] },
-  { "id": "dish_bland", "label": "Not enough flavour", "reason_type": "dish_issue", "requires_dish": true, "keywords": ["bland", "tasteless", "tawar", "no flavour", "no flavor"] },
-  { "id": "dish_cold", "label": "Arrived cold", "reason_type": "dish_issue", "requires_dish": true, "keywords": ["cold", "sejuk", "lukewarm", "not hot"] },
-  { "id": "portion_small", "label": "Portion felt small", "reason_type": "dish_issue", "requires_dish": true, "keywords": ["small", "portion", "sikit", "tiny", "not enough"] },
-  { "id": "wait_time_long", "label": "Waited too long", "reason_type": "wait_time", "requires_dish": false, "keywords": ["wait", "waiting", "slow", "lambat", "queue", "long time", "took forever"] },
-  { "id": "no_seating", "label": "Couldn't get a table", "reason_type": "wait_time", "requires_dish": false, "keywords": ["seat", "table", "full", "packed", "no space"] },
-  { "id": "price_high", "label": "Felt pricey for what I got", "reason_type": "declining_spend", "requires_dish": false, "keywords": ["expensive", "pricey", "mahal", "price", "not worth"] },
-  { "id": "all_good", "label": "Everything was great", "reason_type": "none", "requires_dish": false, "keywords": ["great", "good", "sedap", "delicious", "love", "best"] }
+  { "id": "dish_dry", "label": "Too dry", "reason_type": "dish_issue", "requires_dish": true, "dish_category": "food", "keywords": ["dry", "kering", "tough", "overcooked", "hard"] },
+  { "id": "dish_bland", "label": "Not enough flavour", "reason_type": "dish_issue", "requires_dish": true, "dish_category": "food", "keywords": ["bland", "tasteless", "tawar", "no flavour", "no flavor"] },
+  { "id": "dish_cold", "label": "Arrived cold", "reason_type": "dish_issue", "requires_dish": true, "dish_category": "food", "keywords": ["cold", "sejuk", "lukewarm", "not hot"] },
+  { "id": "portion_small", "label": "Portion too small", "reason_type": "dish_issue", "requires_dish": true, "dish_category": "food", "keywords": ["small", "portion", "sikit", "tiny", "not enough"] },
+  { "id": "too_oily", "label": "Too oily / greasy", "reason_type": "dish_issue", "requires_dish": true, "dish_category": "food", "keywords": ["oily", "greasy", "berminyak", "heavy"] },
+  { "id": "too_spicy", "label": "Too spicy", "reason_type": "dish_issue", "requires_dish": true, "dish_category": "food", "keywords": ["spicy", "pedas", "hot", "burning"] },
+  { "id": "bev_too_sweet", "label": "Too sweet", "reason_type": "dish_issue", "requires_dish": true, "dish_category": "beverage", "keywords": ["sweet", "manis", "sugary", "too much sugar"] },
+  { "id": "bev_too_watery", "label": "Too watery / diluted", "reason_type": "dish_issue", "requires_dish": true, "dish_category": "beverage", "keywords": ["watery", "diluted", "thin", "cair", "weak"] },
+  { "id": "bev_not_cold", "label": "Not cold enough", "reason_type": "dish_issue", "requires_dish": true, "dish_category": "beverage", "keywords": ["warm", "not cold", "ice melted", "room temp"] },
+  { "id": "bev_wrong_order", "label": "Wrong drink / not what I ordered", "reason_type": "dish_issue", "requires_dish": true, "dish_category": "beverage", "keywords": ["wrong", "not what", "different", "salah"] },
+  { "id": "wait_time_long", "label": "Waited too long", "reason_type": "wait_time", "requires_dish": false, "dish_category": null, "keywords": ["wait", "waiting", "slow", "lambat", "queue", "long time", "took forever"] },
+  { "id": "no_seating", "label": "Couldn't get a table", "reason_type": "wait_time", "requires_dish": false, "dish_category": null, "keywords": ["seat", "table", "full", "packed", "no space"] },
+  { "id": "price_high", "label": "Felt pricey for what I got", "reason_type": "declining_spend", "requires_dish": false, "dish_category": null, "keywords": ["expensive", "pricey", "mahal", "price", "not worth"] },
+  { "id": "all_good", "label": "Everything was great", "reason_type": "none", "requires_dish": false, "dish_category": null, "keywords": ["great", "good", "sedap", "delicious", "love", "best"] }
 ]

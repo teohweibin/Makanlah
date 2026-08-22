@@ -7,12 +7,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { GuidedReview } from '@/components/GuidedReview';
 import { DinerRewards } from '@/components/DinerRewards';
+import { InvitationList } from '@/components/InvitationCard';
 import { NudgeToggle } from '@/components/NudgeToggle';
+import { ReviewFlow } from '@/components/ReviewFlow';
 import { loadDataset } from '@/lib/fixtures';
-import { getSubmittedReview } from '@/lib/store';
-import { Card, InterventionTag } from '@/components/ui';
+import { getInvitationsForDiner, getSubmittedReview } from '@/lib/store';
+import { Card } from '@/components/ui';
 
 const DEFAULT_DINER = 'diner_a';
 
@@ -30,9 +31,9 @@ function Section({
   return (
     <section className="mb-9">
       <div className="mb-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-stone-400">{n}</p>
-        <h2 className="mt-0.5 text-lg font-semibold tracking-tight text-stone-900">{title}</h2>
-        {subtitle && <p className="mt-0.5 text-sm text-stone-500">{subtitle}</p>}
+        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">{n}</p>
+        <h2 className="mt-0.5 font-[family-name:var(--font-display)] text-xl font-semibold text-[var(--color-ink)]">{title}</h2>
+        {subtitle && <p className="mt-0.5 text-sm text-[var(--color-muted)]">{subtitle}</p>}
       </div>
       {children}
     </section>
@@ -67,41 +68,29 @@ export default async function DinerHub({
 
   return (
     <main className="mx-auto max-w-md px-5 py-8">
-      {/* header + demo diner switcher */}
+      {/* header */}
       <header className="mb-8">
         <Link
           href="/"
-          className="text-sm text-stone-500 underline underline-offset-4 hover:text-stone-900"
+          className="text-sm text-[var(--color-muted)] underline underline-offset-4 hover:text-[var(--color-ink)]"
         >
-          &larr; Makanlah
+          &larr; MakanLagi
         </Link>
         <div className="mt-3 flex items-center gap-3">
           <span className="text-3xl" aria-hidden>
             {diner.avatar_emoji}
           </span>
           <div>
-            <h1 className="text-xl font-semibold tracking-tight text-stone-900">
+            <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--color-ink)]">
               {diner.name.replace(' (demo profile)', '')}
             </h1>
-            <p className="text-sm text-stone-500">Your Makanlah</p>
+            <p className="text-sm text-[var(--color-muted)]">Your MakanLagi</p>
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap gap-1.5">
-          {ds.diners.map((d) => (
-            <Link
-              key={d.id}
-              href={`/diner?as=${d.id}`}
-              className={`rounded-full border px-2.5 py-1 text-xs transition ${
-                d.id === diner.id
-                  ? 'border-stone-800 bg-stone-800 text-white'
-                  : 'border-stone-300 bg-white text-stone-600 hover:border-stone-400'
-              }`}
-            >
-              {d.avatar_emoji} {d.name.replace(' (demo profile)', '')}
-            </Link>
-          ))}
-        </div>
       </header>
+
+      {/* ── pending invitations (restaurant fixed something you reported) ─── */}
+      <InvitationList invitations={getInvitationsForDiner(diner.id)} />
 
       {/* ── 1 + 2. active order → guided review → reward confirmation ────── */}
       <Section
@@ -117,77 +106,74 @@ export default async function DinerHub({
           <Card className="p-6 text-center text-stone-500">No open order right now.</Card>
         ) : (
           <Card className="p-4">
-            <div className="mb-4 rounded-lg bg-stone-50 px-3 py-2.5">
-              <div className="flex items-center justify-between">
+            <div className="mb-3 flex items-center justify-between rounded-lg bg-stone-50 px-3 py-2.5">
+              <div>
                 <p className="font-medium text-stone-900">{restaurant.name}</p>
-                <span className="text-xs text-stone-500">{activeOrder.table}</span>
+                <p className="mt-0.5 text-xs text-stone-500">
+                  {activeOrder.table} · {ds.config.currency} {activeOrder.amount.toFixed(2)}
+                </p>
               </div>
-              <p className="mt-0.5 text-sm text-stone-500">
-                {dishes.map((d) => d.name).join(', ')}
-              </p>
-              <p className="mt-0.5 text-sm text-stone-500">
-                Bill: {ds.config.currency} {activeOrder.amount.toFixed(2)}
-              </p>
+              <span className="text-xs text-stone-400">tonight</span>
             </div>
 
             {submitted && presentation ? (
-              /* ── 2. reward confirmation ───────────────────────────────── */
-              <div className="text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-xl">
-                  ✓
-                </div>
-                <div className="mt-3 flex justify-center">
-                  <InterventionTag
-                    icon={presentation.icon}
-                    label={presentation.tag_label}
-                    color={presentation.tag_color}
-                  />
-                </div>
-                <p className="mt-3 text-4xl font-semibold tracking-tight text-stone-900">
-                  {submitted.reward_percent}%
-                </p>
-                <p className="text-sm font-medium uppercase tracking-wide text-stone-500">
-                  off this bill
-                </p>
-                <p className="mt-2 text-stone-600">{presentation.body}</p>
-
-                <div className="mt-4 rounded-lg bg-stone-50 px-3 py-3 text-left text-sm">
-                  {submitted.mint_address ? (
-                    <p className="text-stone-700">
-                      🪙 Your reward token has been sent to your wallet.{' '}
-                      <span className="text-stone-500">
-                        It&rsquo;s yours to keep — usable here or at any Makanlah restaurant.
-                      </span>
-                    </p>
-                  ) : (
-                    <p className="text-stone-700">
-                      Your reward is saved. Sending the token to your wallet is still pending
-                      {submitted.chain_error ? `: ${submitted.chain_error}` : '.'}
-                    </p>
-                  )}
+              /* ── 2. reward confirmation — visual-first ────────────────── */
+              <div className="flex flex-col items-center px-2 py-6">
+                {/* large checkmark */}
+                <div className="animate-scale-in flex h-24 w-24 items-center justify-center rounded-full bg-[var(--color-success-light)]">
+                  <span className="text-5xl text-[var(--color-success)]">✓</span>
                 </div>
 
-                <p className="mt-3 text-sm text-stone-500">
-                  You told us:{' '}
-                  {submitted.review.guided_tags
-                    .map((raw) => {
-                      const [tagId, dishId] = raw.split(':');
-                      const tag = ds.guidedReviewTags.find((t) => t.id === tagId);
-                      const dish = dishId
-                        ? restaurant.known_dishes.find((d) => d.id === dishId)
-                        : null;
-                      return `${tag?.label ?? tagId}${dish ? ` (${dish.name})` : ''}`;
-                    })
-                    .join(', ')}
+                {/* discount */}
+                <p className="mt-5 font-[family-name:var(--font-display)] text-5xl font-bold tracking-tight text-[var(--color-ink)]">
+                  {submitted.reward_percent}% OFF
                 </p>
+
+                {/* savings + tokens */}
+                <div className="mt-4 space-y-1.5 text-center">
+                  <p className="text-lg text-[var(--color-muted)]">
+                    You saved:{' '}
+                    <span className="font-semibold text-[var(--color-ink)]">
+                      {ds.config.currency}{' '}
+                      {(activeOrder.amount * submitted.reward_percent / 100).toFixed(2)}
+                    </span>
+                  </p>
+                  <p className="text-lg text-[var(--color-muted)]">
+                    Tokens earned:{' '}
+                    <span className="font-semibold text-[var(--color-ink)]">1 🪙</span>
+                  </p>
+                </div>
+
+                {/* chain status — small footnote */}
+                {!submitted.mint_address && submitted.chain_error && (
+                  <p className="mt-4 text-xs text-[var(--color-muted)]">
+                    Token pending: {submitted.chain_error}
+                  </p>
+                )}
+
+                {/* action buttons */}
+                <div className="mt-6 flex w-full gap-3">
+                  <Link
+                    href="/"
+                    className="flex-1 rounded-xl border border-[var(--color-ink)]/15 bg-white px-4 py-3 text-center text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-paper)]"
+                  >
+                    Done
+                  </Link>
+                  <Link
+                    href={`/diner/${diner.id}/wallet`}
+                    className="flex-1 rounded-xl bg-[var(--color-ink)] px-4 py-3 text-center text-sm font-medium text-white transition hover:bg-[var(--color-ink)]/85"
+                  >
+                    View in Wallet
+                  </Link>
+                </div>
               </div>
             ) : (
-              <GuidedReview
+              <ReviewFlow
                 orderId={activeOrder.id}
                 restaurantName={restaurant.name}
                 dishes={dishes}
                 tags={ds.guidedReviewTags}
-                hideIntro
+                currency={ds.config.currency}
               />
             )}
           </Card>
@@ -209,6 +195,12 @@ export default async function DinerHub({
         >
           <DinerRewards dinerId={diner.id} />
         </Suspense>
+        <Link
+          href={`/diner/${diner.id}/wallet`}
+          className="mt-3 block text-center text-sm font-medium text-stone-600 underline underline-offset-4 hover:text-stone-900"
+        >
+          View full wallet &rarr;
+        </Link>
       </Section>
 
       {/* ── 4. discover & support ───────────────────────────────────────── */}

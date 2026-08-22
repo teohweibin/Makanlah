@@ -6,12 +6,12 @@
     "is_struggling": false,
     "is_anchor": true,
     "known_dishes": [
-      { "id": "dish_ayam_percik", "name": "Ayam Percik", "price": 14.5 },
-      { "id": "dish_nasi_lemak", "name": "Nasi Lemak Special", "price": 9.0 },
-      { "id": "dish_mee_goreng", "name": "Mee Goreng Mamak", "price": 8.5 },
-      { "id": "dish_sambal_udang", "name": "Sambal Udang", "price": 18.0 },
-      { "id": "dish_roti_jala", "name": "Roti Jala with Kari", "price": 7.0 },
-      { "id": "dish_teh_tarik", "name": "Teh Tarik", "price": 3.5 }
+      { "id": "dish_ayam_percik", "name": "Ayam Percik", "price": 14.5, "category": "food" },
+      { "id": "dish_nasi_lemak", "name": "Nasi Lemak Special", "price": 9.0, "category": "food" },
+      { "id": "dish_mee_goreng", "name": "Mee Goreng Mamak", "price": 8.5, "category": "food" },
+      { "id": "dish_sambal_udang", "name": "Sambal Udang", "price": 18.0, "category": "food" },
+      { "id": "dish_roti_jala", "name": "Roti Jala with Kari", "price": 7.0, "category": "food" },
+      { "id": "dish_teh_tarik", "name": "Teh Tarik", "price": 3.5, "category": "beverage" }
     ],
     "known_pain_points": [
       {
@@ -40,9 +40,9 @@
     "is_anchor": false,
     "support_multiplier": 2,
     "known_dishes": [
-      { "id": "dish_kaya_toast", "name": "Kaya Toast Set", "price": 6.5 },
-      { "id": "dish_kopi_o", "name": "Kopi O Kosong", "price": 2.8 },
-      { "id": "dish_curry_mee", "name": "Curry Mee", "price": 10.0 }
+      { "id": "dish_kaya_toast", "name": "Kaya Toast Set", "price": 6.5, "category": "food" },
+      { "id": "dish_kopi_o", "name": "Kopi O Kosong", "price": 2.8, "category": "beverage" },
+      { "id": "dish_curry_mee", "name": "Curry Mee", "price": 10.0, "category": "food" }
     ],
     "known_pain_points": [
       {

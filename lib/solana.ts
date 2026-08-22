@@ -253,3 +253,53 @@ export async function listWalletRewards(ownerWallet: string): Promise<WalletHold
     return { holdings: [], error: e instanceof Error && e.message ? e.message : 'Chain read failed' };
   }
 }
+
+/* ── transaction history for wallet UI ───────────────────────────────────── */
+
+export interface WalletTransaction {
+  signature: string;
+  block_time: number | null;
+  /** Human-readable relative time. */
+  time_label: string;
+  explorer_url: string;
+}
+
+/**
+ * Recent transaction signatures for a wallet — displayed in the diner's wallet page.
+ * Limited to last 20 transactions to avoid slow RPC calls on devnet.
+ */
+export async function getWalletTransactions(ownerWallet: string): Promise<{
+  transactions: WalletTransaction[];
+  error: string | null;
+}> {
+  try {
+    const conn = getConnection();
+    const owner = new PublicKey(ownerWallet);
+    const sigs = await conn.getSignaturesForAddress(owner, { limit: 20 });
+
+    const now = Date.now() / 1000;
+    const transactions: WalletTransaction[] = sigs.map((s) => {
+      let time_label = 'unknown';
+      if (s.blockTime) {
+        const diffSec = now - s.blockTime;
+        if (diffSec < 60) time_label = 'just now';
+        else if (diffSec < 3600) time_label = `${Math.floor(diffSec / 60)}m ago`;
+        else if (diffSec < 86400) time_label = `${Math.floor(diffSec / 3600)}h ago`;
+        else time_label = `${Math.floor(diffSec / 86400)}d ago`;
+      }
+      return {
+        signature: s.signature,
+        block_time: s.blockTime ?? null,
+        time_label,
+        explorer_url: explorerUrl('tx', s.signature),
+      };
+    });
+
+    return { transactions, error: null };
+  } catch (e) {
+    return {
+      transactions: [],
+      error: e instanceof Error && e.message ? e.message : 'Failed to fetch transactions',
+    };
+  }
+}

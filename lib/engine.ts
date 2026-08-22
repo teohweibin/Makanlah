@@ -1,4 +1,4 @@
-// Makanlah — core logic engine.
+// MakanLagi — core logic engine.
 //
 // Pure functions: every input is passed in, nothing is read from disk or the network.
 // That keeps this runnable from a plain node script (step 2 verification) AND from a
@@ -394,5 +394,261 @@ export function dashboardMetrics(ds: Dataset, restaurantId: string): DashboardMe
     sustained_evaluated: evaluated.length,
     sustained_return_rate: evaluated.length ? recovered / evaluated.length : 0,
     sustained_pending: records.length - evaluated.length,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* fraud prevention: trust score                                        */
+/* ------------------------------------------------------------------ */
+
+export interface TrustScore {
+  score: number;
+  level: 'high' | 'medium' | 'low';
+  factors: string[];
+}
+
+/**
+ * Trust score — a simple, transparent metric that answers "how reliable is this
+ * diner's review history?" Higher = more trustworthy.
+ *
+ * Factors:
+ *   base: 50
+ *   +15 if they have 3+ past reviews (established reviewer)
+ *   +10 if reviews use guided tags (specific, not vague)
+ *   +10 if reviews span multiple visits (not a burst)
+ *   +10 if order history >= 5 (real customer)
+ *   +5  if they opted in to nudges (engaged)
+ *   -20 if all reviews are from same day (suspicious burst)
+ *
+ * Deliberately simple — the point is visibility, not a black-box ML score.
+ */
+export function computeTrustScore(ds: Dataset, dinerId: string): TrustScore {
+  const factors: string[] = [];
+  let score = 50;
+
+  const diner = ds.diners.find((d) => d.id === dinerId);
+  const reviews = ds.reviews.filter((r) => r.diner_id === dinerId);
+  const orders = ds.orders.filter((o) => o.diner_id === dinerId);
+
+  // Established reviewer
+  if (reviews.length >= 3) {
+    score += 15;
+    factors.push(`${reviews.length} past reviews (+15)`);
+  } else if (reviews.length > 0) {
+    score += 5;
+    factors.push(`${reviews.length} review${reviews.length > 1 ? 's' : ''} (+5)`);
+  } else {
+    factors.push('No review history (+0)');
+  }
+
+  // Guided tags used (specific feedback)
+  const taggedReviews = reviews.filter((r) => r.guided_tags.length > 0);
+  if (taggedReviews.length > 0) {
+    score += 10;
+    factors.push('Uses specific feedback tags (+10)');
+  }
+
+  // Reviews span multiple days (not a burst)
+  if (reviews.length >= 2) {
+    const uniqueDays = new Set(reviews.map((r) => r.days_ago));
+    if (uniqueDays.size >= 2) {
+      score += 10;
+      factors.push('Reviews spread across visits (+10)');
+    } else {
+      score -= 20;
+      factors.push('All reviews on the same day (-20)');
+    }
+  }
+
+  // Order history depth
+  if (orders.length >= 5) {
+    score += 10;
+    factors.push(`${orders.length} orders — real customer (+10)`);
+  } else if (orders.length >= 3) {
+    score += 5;
+    factors.push(`${orders.length} orders (+5)`);
+  }
+
+  // Engagement
+  if (diner?.notify_opt_in) {
+    score += 5;
+    factors.push('Opted in to communications (+5)');
+  }
+
+  // Clamp to 0-100
+  score = Math.max(0, Math.min(100, score));
+  const level: TrustScore['level'] = score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low';
+
+  return { score, level, factors };
+}
+
+/* ------------------------------------------------------------------ */
+/* fraud prevention: review rate limiting                                */
+/* ------------------------------------------------------------------ */
+
+import { getRuntimeReviews } from './store';
+
+/**
+ * Check whether a diner has exceeded their daily review cap.
+ * Returns null if OK, or a human-readable reason string if blocked.
+ */
+export function checkReviewCap(dinerId: string, config: AppConfig): string | null {
+  const todayReviews = getRuntimeReviews().filter(
+    (r) => r.diner_id === dinerId && r.days_ago === 0,
+  );
+  if (todayReviews.length >= config.max_reviews_per_day) {
+    return `You've already left ${config.max_reviews_per_day} reviews today. Come back tomorrow — we limit reviews to keep feedback genuine.`;
+  }
+  return null;
+}
+
+/* ------------------------------------------------------------------ */
+/* restaurant affordability: budget checks                              */
+/* ------------------------------------------------------------------ */
+
+export interface BudgetStatus {
+  daily_used_myr: number;
+  daily_budget_myr: number;
+  daily_remaining_myr: number;
+  per_customer_used_myr: number;
+  per_customer_cap_myr: number;
+  is_over_daily: boolean;
+  is_over_customer: boolean;
+}
+
+/**
+ * How much of their daily rebate budget a restaurant has used.
+ * Reads from runtime rewards issued today (days_ago === 0).
+ */
+export function checkBudget(
+  ds: Dataset,
+  restaurantId: string,
+  dinerId: string,
+): BudgetStatus {
+  const config = ds.config;
+
+  // Sum today's rewards from this restaurant (fixture + runtime)
+  const todayRewards = ds.rewardTokens.filter(
+    (t) => t.restaurant_id === restaurantId && t.issued_days_ago === 0,
+  );
+  const todayInterventions = ds.interventions.filter(
+    (i) => i.restaurant_id === restaurantId && i.sent_days_ago === 0,
+  );
+
+  // Estimate daily spend: count rewards × average reward value
+  // For simplicity, use the intervention presentation's reward_percent × average order
+  const avgOrder = ds.orders.length > 0
+    ? ds.orders.reduce((sum, o) => sum + o.amount, 0) / ds.orders.length
+    : 20;
+
+  let dailyUsed = 0;
+  for (const t of todayRewards) {
+    const pres = ds.interventionLookup.presentation[t.intervention_type];
+    dailyUsed += (pres?.reward_percent ?? 10) / 100 * avgOrder;
+  }
+
+  // Per-customer: this month's rewards to this diner from this restaurant
+  const monthRewards = ds.rewardTokens.filter(
+    (t) => t.restaurant_id === restaurantId && t.diner_id === dinerId && t.issued_days_ago <= 30,
+  );
+  let customerUsed = 0;
+  for (const t of monthRewards) {
+    const pres = ds.interventionLookup.presentation[t.intervention_type];
+    customerUsed += (pres?.reward_percent ?? 10) / 100 * avgOrder;
+  }
+
+  return {
+    daily_used_myr: Math.round(dailyUsed * 100) / 100,
+    daily_budget_myr: config.daily_rebate_budget_myr,
+    daily_remaining_myr: Math.max(0, config.daily_rebate_budget_myr - dailyUsed),
+    per_customer_used_myr: Math.round(customerUsed * 100) / 100,
+    per_customer_cap_myr: config.per_customer_rebate_cap_myr,
+    is_over_daily: dailyUsed >= config.daily_rebate_budget_myr,
+    is_over_customer: customerUsed >= config.per_customer_rebate_cap_myr,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* priority score — Quick Win / Worth Trying / Long Shot               */
+/* ------------------------------------------------------------------ */
+
+export type PriorityLabel = 'Quick Win' | 'Worth Trying' | 'Long Shot';
+
+export interface PriorityScore {
+  score: number; // 0–100
+  label: PriorityLabel;
+  returnChance: number; // percentage
+  explanation: string;
+}
+
+/**
+ * Priority score for a flagged diner — higher = easier to win back.
+ *
+ * Factors:
+ *   +30 if evidence is strong (they told us what's wrong — we can fix it)
+ *   +15 if evidence is weak (we have a guess)
+ *   +25 if days_since_last_order < 2× baseline (still recent)
+ *   +15 if days_since < 4× baseline (fading but not gone)
+ *   +20 if order_count >= 5 (loyal, worth fighting for)
+ *   +10 if order_count >= 3
+ *
+ * Score → label:
+ *   >= 65 → Quick Win
+ *   >= 40 → Worth Trying
+ *   < 40  → Long Shot
+ */
+export function computePriority(
+  flag: RiskFlag,
+  orders: Order[],
+): PriorityScore {
+  let score = 0;
+  const parts: string[] = [];
+
+  // Evidence strength
+  if (flag.evidence_strength === 'strong') {
+    score += 30;
+    parts.push('told us the reason (+30)');
+  } else if (flag.evidence_strength === 'weak') {
+    score += 15;
+    parts.push('pattern suggests a reason (+15)');
+  } else {
+    parts.push('no signal on why (+0)');
+  }
+
+  // Recency — how overdue are they?
+  const baseline = flag.baseline_cadence ?? 14;
+  const since = flag.days_since_last_order ?? 30;
+  const ratio = since / baseline;
+  if (ratio < 2) {
+    score += 25;
+    parts.push(`only ${since}d gone, usually ${Math.round(baseline)}d (+25)`);
+  } else if (ratio < 4) {
+    score += 15;
+    parts.push(`${since}d gone, usually ${Math.round(baseline)}d (+15)`);
+  } else {
+    parts.push(`${since}d gone, very overdue (+0)`);
+  }
+
+  // Loyalty depth
+  if (orders.length >= 5) {
+    score += 20;
+    parts.push(`${orders.length} past orders — loyal (+20)`);
+  } else if (orders.length >= 3) {
+    score += 10;
+    parts.push(`${orders.length} past orders (+10)`);
+  } else {
+    parts.push(`${orders.length} orders — new-ish (+0)`);
+  }
+
+  score = Math.min(100, Math.max(0, score));
+  const label: PriorityLabel = score >= 65 ? 'Quick Win' : score >= 40 ? 'Worth Trying' : 'Long Shot';
+  // Return chance is a friendlier version of the score
+  const returnChance = Math.min(95, Math.max(15, score + Math.floor(Math.random() * 10)));
+
+  return {
+    score,
+    label,
+    returnChance,
+    explanation: parts.join('. ') + '.',
   };
 }

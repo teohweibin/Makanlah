@@ -6,10 +6,10 @@ import type { EvidenceStrength, RiskStatus } from '@/lib/types';
  * JSON means adding a row here too — that is the trade for keeping copy in the fixture.
  */
 const TAG_COLORS: Record<string, string> = {
-  orange: 'bg-orange-50 text-orange-900 border-orange-200',
-  blue: 'bg-blue-50 text-blue-900 border-blue-200',
-  green: 'bg-emerald-50 text-emerald-900 border-emerald-200',
-  gray: 'bg-stone-100 text-stone-700 border-stone-200',
+  orange: 'bg-[#FBF2E0] text-[#A13D2E] border-[#C48A2E]',
+  blue: 'bg-[#EDEBF5] text-[#5B5285] border-[#5B5285]/30',
+  green: 'bg-[#E4F0E6] text-[#2F5233] border-[#2F5233]/30',
+  gray: 'bg-[#F7F3E8] text-[#5F5E5A] border-[#5F5E5A]/20',
 };
 
 export function InterventionTag({
@@ -40,17 +40,17 @@ export function InterventionTag({
 const EVIDENCE: Record<EvidenceStrength, { label: string; className: string; hint: string }> = {
   strong: {
     label: 'Verified',
-    className: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+    className: 'bg-[#E4F0E6] text-[#2F5233] border-[#2F5233]/30',
     hint: 'From a guided review — the diner told us this themselves',
   },
   weak: {
     label: 'Inferred',
-    className: 'bg-amber-100 text-amber-900 border-amber-300',
+    className: 'bg-[#FBF2E0] text-[#C48A2E] border-[#C48A2E]/40',
     hint: 'Pattern-based guess — not confirmed by the diner',
   },
   none: {
     label: 'No signal',
-    className: 'bg-stone-100 text-stone-600 border-stone-300',
+    className: 'bg-[#F7F3E8] text-[#5F5E5A] border-[#5F5E5A]/20',
     hint: 'No supporting data at all — treat gently',
   },
 };
@@ -72,8 +72,8 @@ export function evidenceHint(strength: EvidenceStrength) {
 }
 
 const STATUS: Record<Exclude<RiskStatus, 'none'>, { label: string; className: string }> = {
-  at_risk: { label: 'At risk', className: 'bg-rose-100 text-rose-900 border-rose-300' },
-  silent_churn: { label: 'Silent churn', className: 'bg-violet-100 text-violet-900 border-violet-300' },
+  at_risk: { label: 'At risk', className: 'bg-[#F5E5E2] text-[#A13D2E] border-[#A13D2E]/30' },
+  silent_churn: { label: 'Silent churn', className: 'bg-[#EDEBF5] text-[#5B5285] border-[#5B5285]/30' },
 };
 
 export function StatusBadge({ status }: { status: RiskStatus }) {
@@ -96,7 +96,7 @@ export function Card({
   className?: string;
 }) {
   return (
-    <div className={`rounded-xl border border-stone-200 bg-white shadow-sm ${className}`}>
+    <div className={`card-hover rounded-xl border border-[#1A1410]/10 bg-white shadow-sm transition ${className}`}>
       {children}
     </div>
   );

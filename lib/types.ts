@@ -1,4 +1,4 @@
-// Makanlah — data model.
+// MakanLagi — data model.
 // Timestamps are stored in fixtures as `days_ago` offsets (never hardcoded dates)
 // so the dataset never goes stale if the demo runs later than planned.
 
@@ -27,6 +27,7 @@ export interface Dish {
   id: string;
   name: string;
   price: number;
+  category: 'food' | 'beverage';
 }
 
 export interface PainPoint {
@@ -87,6 +88,8 @@ export interface GuidedReviewTag {
   label: string;
   reason_type: ReasonType;
   requires_dish: boolean;
+  /** Which dish category this tag applies to. null = applies to any / not dish-specific. */
+  dish_category: 'food' | 'beverage' | null;
   keywords: string[];
 }
 
@@ -180,6 +183,10 @@ export interface AppConfig {
   sustained_return_tolerance: number;
   declining_spend_threshold: number;
   currency: string;
+  max_reviews_per_day: number;
+  max_rebate_per_customer_per_month_myr: number;
+  daily_rebate_budget_myr: number;
+  per_customer_rebate_cap_myr: number;
 }
 
 /**
@@ -208,4 +215,42 @@ export interface DiscoverPoolEntry {
   multiplier: number;
   reason: string;
   signature_dish: string;
+}
+
+/* ── Invitation (accept-before-mint flow) ────────────────────────────────── */
+
+export type InvitationStatus = 'pending' | 'accepted' | 'declined' | 'expired';
+
+export interface Invitation {
+  id: string;
+  diner_id: string;
+  restaurant_id: string;
+  restaurant_name: string;
+  /** What triggered this invitation. */
+  reason: 'dish_fix' | 'win_back' | 'priority_seating' | 'value_bundle' | 'reorder_nudge';
+  /** Human-friendly message shown to the diner. */
+  message: string;
+  /** What the reward actually is. */
+  reward_description: string;
+  /** Monetary value or percentage. */
+  reward_value: string;
+  /** Percentage discount (for calculations). */
+  reward_percent: number;
+  /** How to redeem. */
+  redemption_instructions: string;
+  /** Short code the cashier can verify. */
+  redemption_code: string;
+  /** Dish that was fixed (if applicable). */
+  dish_id: string | null;
+  dish_name: string | null;
+  /** When created. */
+  created_at: number;
+  /** Days until expiry from creation. */
+  validity_days: number;
+  /** Current status. */
+  status: InvitationStatus;
+  /** Filled ONLY after acceptance — the on-chain mint. */
+  mint_address: string | null;
+  mint_signature: string | null;
+  chain_error: string | null;
 }

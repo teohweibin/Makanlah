@@ -1,11 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { evaluateDiner, parseGuidedTag, selectIntervention } from '@/lib/engine';
+import { evaluateDiner, parseGuidedTag, selectIntervention, checkReviewCap } from '@/lib/engine';
 import { loadDataset } from '@/lib/fixtures';
 import { isChainConfigured, issueRewardToken } from '@/lib/solana';
-import { addAcceptedInvite, addSubmittedReview, setNudgePreference } from '@/lib/store';
-import type { EvidenceStrength, ReasonType, Review } from '@/lib/types';
+import { addAcceptedInvite, addSubmittedReview, addDishFeedback, setNudgePreference, addFixNotification, getNotificationsForDiner, markNotificationSeen, getFeedbackForDish, addInvitation, getInvitation, updateInvitationStatus, getInvitationsForDiner } from '@/lib/store';
+import type { DishFeedbackEntry } from '@/lib/store';
+import type { EvidenceStrength, Invitation, ReasonType, Review } from '@/lib/types';
 
 export interface ReviewSubmission {
   order_id: string;
@@ -27,6 +28,12 @@ export async function submitReview(input: ReviewSubmission) {
     ds.orders.find((o) => o.id === input.order_id) ??
     ds.activeOrders.find((o) => o.id === input.order_id);
   if (!order) throw new Error(`Unknown order ${input.order_id}`);
+
+  // Fraud prevention: check review rate limit before processing.
+  const capError = checkReviewCap(order.diner_id, ds.config);
+  if (capError) {
+    return { ok: false as const, error: capError };
+  }
 
   // A tap-selected tag is first-hand testimony, so evidence is strong by definition.
   let reason: ReasonType = 'no_signal';
@@ -82,13 +89,47 @@ export async function submitReview(input: ReviewSubmission) {
   addSubmittedReview({
     review,
     intervention_type,
-    reward_percent: presentation.reward_percent,
+    // Randomize reward: 5%, 10%, or 15% — keeps it sustainable for the restaurant.
+    reward_percent: [5, 10, 15][Math.floor(Math.random() * 3)],
     reward_token_id: `tok_live_${order.id}`,
     mint_address,
     mint_signature,
     token_account,
     chain_error,
   });
+
+  // Store categorized per-dish feedback for the improvement suggestion engine.
+  const dishFeedbackEntries: DishFeedbackEntry[] = [];
+  const seenDishes = new Map<string, string[]>();
+  for (const raw of input.guided_tags) {
+    const { tag, dishId } = parseGuidedTag(raw, ds.guidedReviewTags);
+    if (!tag || !dishId) continue;
+    const existing = seenDishes.get(dishId);
+    if (existing) {
+      existing.push(tag.id);
+    } else {
+      seenDishes.set(dishId, [tag.id]);
+    }
+  }
+  for (const [dishId, tagIds] of seenDishes) {
+    // Find the dish across all restaurants
+    const restaurant = ds.restaurants.find((r) => r.id === order.restaurant_id);
+    const dish = restaurant?.known_dishes.find((d) => d.id === dishId);
+    dishFeedbackEntries.push({
+      dish_id: dishId,
+      dish_name: dish?.name ?? dishId,
+      category: dish?.category ?? 'food',
+      tag_ids: tagIds,
+      tag_labels: tagIds.map((id) => ds.guidedReviewTags.find((t) => t.id === id)?.label ?? id),
+      diner_id: order.diner_id,
+      restaurant_id: order.restaurant_id,
+      order_id: order.id,
+      submitted_at: Date.now(),
+    });
+  }
+  if (dishFeedbackEntries.length > 0) {
+    addDishFeedback(dishFeedbackEntries);
+  }
 
   // The dashboard reads the same dataset, so it should reflect this immediately.
   revalidatePath(`/restaurant/${order.restaurant_id}`);
@@ -166,5 +207,145 @@ export async function updateNudgePreference(input: { diner_id: string; opt_in: b
   // Campaign targeting on the restaurant side reads the same flag.
   revalidatePath('/restaurant/rest_warung_mama');
   revalidatePath('/restaurant/rest_kedai_pakcik');
+  return { ok: true as const };
+}
+
+/**
+ * Restaurant owner marks a dish issue as fixed. Creates a PENDING INVITATION
+ * for each affected diner — the token is NOT minted until they accept.
+ */
+export async function markIssueFixed(input: {
+  restaurant_id: string;
+  dish_id: string;
+  message?: string;
+}) {
+  const ds = loadDataset();
+  const restaurant = ds.restaurants.find((r) => r.id === input.restaurant_id);
+  if (!restaurant) throw new Error('Unknown restaurant');
+
+  const dish = restaurant.known_dishes.find((d) => d.id === input.dish_id);
+
+  // Find all diners who reported issues with this dish
+  const feedback = getFeedbackForDish(input.dish_id);
+  const affectedDinerIds = [...new Set(feedback.map((f) => f.diner_id))];
+
+  const rewardPercent = [10, 15][Math.floor(Math.random() * 2)];
+  const rewardDescription = dish
+    ? `1 Free ${dish.name}`
+    : `${rewardPercent}% off your next order`;
+  const rewardValue = dish
+    ? `RM ${dish.price.toFixed(2)}`
+    : `${rewardPercent}%`;
+  const defaultMessage = dish
+    ? `We've fixed the ${dish.name}! Come back and try it — this one's on us.`
+    : 'We listened to your feedback and made changes. Come see for yourself!';
+
+  let invited = 0;
+  for (const dinerId of affectedDinerIds) {
+    const diner = ds.diners.find((d) => d.id === dinerId);
+    if (!diner?.notify_opt_in) continue;
+
+    const code = `FIX-${input.dish_id.slice(-4).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
+
+    addInvitation({
+      id: `inv_${input.restaurant_id}_${input.dish_id}_${dinerId}`,
+      diner_id: dinerId,
+      restaurant_id: input.restaurant_id,
+      restaurant_name: restaurant.name,
+      reason: 'dish_fix',
+      message: input.message ?? defaultMessage,
+      reward_description: rewardDescription,
+      reward_value: rewardValue,
+      reward_percent: rewardPercent,
+      redemption_instructions: 'Show this screen to the cashier or mention your code.',
+      redemption_code: code,
+      dish_id: input.dish_id,
+      dish_name: dish?.name ?? null,
+      created_at: Date.now(),
+      validity_days: 14,
+      status: 'pending',
+      mint_address: null,
+      mint_signature: null,
+      chain_error: null,
+    });
+    invited++;
+  }
+
+  for (const dinerId of affectedDinerIds) {
+    revalidatePath(`/diner?as=${dinerId}`);
+    revalidatePath(`/diner/${dinerId}`);
+  }
+  revalidatePath(`/restaurant/${input.restaurant_id}`);
+
+  return { ok: true as const, invited };
+}
+
+/**
+ * Diner accepts an invitation — NOW we mint the token to their wallet.
+ * This is the whole point: the reward is a personal acceptance, not a surprise deposit.
+ */
+export async function acceptInvitation(input: { invitation_id: string; diner_id: string }) {
+  const ds = loadDataset();
+  const inv = getInvitation(input.invitation_id);
+  if (!inv) throw new Error('Invitation not found');
+  if (inv.diner_id !== input.diner_id) throw new Error('Not your invitation');
+  if (inv.status !== 'pending') throw new Error(`Invitation is ${inv.status}`);
+
+  // Check expiry
+  const expired = Date.now() - inv.created_at > inv.validity_days * 86_400_000;
+  if (expired) {
+    updateInvitationStatus(inv.id, 'expired');
+    return { ok: false as const, error: 'This invitation has expired.' };
+  }
+
+  // Mint token NOW
+  const diner = ds.diners.find((d) => d.id === input.diner_id);
+  let mint_address: string | null = null;
+  let mint_signature: string | null = null;
+  let chain_error: string | null = null;
+
+  if (!isChainConfigured()) {
+    chain_error = 'Devnet not configured';
+  } else if (!diner?.wallet_address || diner.wallet_address.startsWith('MOCK_')) {
+    chain_error = 'No wallet configured';
+  } else {
+    try {
+      const issued = await issueRewardToken(diner.wallet_address);
+      mint_address = issued.mint_address;
+      mint_signature = issued.mint_signature;
+    } catch (e) {
+      chain_error = e instanceof Error ? e.message : 'Mint failed';
+    }
+  }
+
+  updateInvitationStatus(inv.id, 'accepted', mint_address && mint_signature ? { mint_address, mint_signature } : undefined);
+  if (chain_error) {
+    // Still mark accepted — chain error is recorded on the invitation
+    const invRef = getInvitation(inv.id);
+    if (invRef) invRef.chain_error = chain_error;
+  }
+
+  revalidatePath(`/diner?as=${input.diner_id}`);
+  revalidatePath(`/diner/${input.diner_id}`);
+  revalidatePath(`/diner/${input.diner_id}/wallet`);
+
+  return { ok: true as const, mint_address, chain_error };
+}
+
+/** Diner declines an invitation. */
+export async function declineInvitation(input: { invitation_id: string; diner_id: string }) {
+  const inv = getInvitation(input.invitation_id);
+  if (!inv || inv.diner_id !== input.diner_id) return { ok: false as const };
+  updateInvitationStatus(inv.id, 'declined');
+  revalidatePath(`/diner?as=${input.diner_id}`);
+  revalidatePath(`/diner/${input.diner_id}`);
+  return { ok: true as const };
+}
+
+/** Mark a fix notification as seen (diner dismissed it). */
+export async function dismissNotification(input: { notification_id: string; diner_id: string }) {
+  markNotificationSeen(input.notification_id);
+  revalidatePath(`/diner?as=${input.diner_id}`);
+  revalidatePath(`/diner/${input.diner_id}`);
   return { ok: true as const };
 }

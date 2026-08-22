@@ -7,6 +7,7 @@ import {
   parseGuidedTag,
   renderHeadline,
   selectIntervention,
+  computeTrustScore,
 } from '@/lib/engine';
 import { loadDataset } from '@/lib/fixtures';
 import { Card, EvidenceBadge, InterventionTag, StatusBadge, evidenceHint } from '@/components/ui';
@@ -49,6 +50,8 @@ export default async function DinerReasonDetail({
       (p.related_dish_id === null || p.related_dish_id === flag.related_dish_id),
   );
 
+  const trust = computeTrustScore(ds, dinerId);
+
   return (
     <main className="mx-auto max-w-3xl px-5 py-8">
       <Link
@@ -67,6 +70,17 @@ export default async function DinerReasonDetail({
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <StatusBadge status={flag.status} />
             <EvidenceBadge strength={flag.evidence_strength} />
+            <span
+              className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
+                trust.level === 'high'
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                  : trust.level === 'medium'
+                    ? 'border-amber-300 bg-amber-50 text-amber-900'
+                    : 'border-rose-300 bg-rose-50 text-rose-900'
+              }`}
+            >
+              Trust {trust.score}/100
+            </span>
           </div>
         </div>
       </header>
@@ -91,6 +105,48 @@ export default async function DinerReasonDetail({
             {relatedPain.fixed_note && ` — ${relatedPain.fixed_note}`}
           </p>
         )}
+      </Card>
+
+      {/* trust score breakdown */}
+      <Card className="mb-5 p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="font-medium text-stone-900">Reviewer Trust</h2>
+          <span
+            className={`rounded-full px-3 py-1 text-sm font-semibold ${
+              trust.level === 'high'
+                ? 'bg-emerald-100 text-emerald-900'
+                : trust.level === 'medium'
+                  ? 'bg-amber-100 text-amber-900'
+                  : 'bg-rose-100 text-rose-900'
+            }`}
+          >
+            {trust.score}/100
+          </span>
+        </div>
+        {/* progress bar */}
+        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-stone-100">
+          <div
+            className={`h-full rounded-full transition-all ${
+              trust.level === 'high'
+                ? 'bg-emerald-500'
+                : trust.level === 'medium'
+                  ? 'bg-amber-500'
+                  : 'bg-rose-500'
+            }`}
+            style={{ width: `${trust.score}%` }}
+          />
+        </div>
+        <ul className="mt-3 space-y-1">
+          {trust.factors.map((f) => (
+            <li key={f} className="text-sm text-stone-600">
+              • {f}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-xs text-stone-400">
+          This score decides whether a reward is issued at full value. Low-trust reviewers
+          may receive capped rewards to prevent gaming.
+        </p>
       </Card>
 
       {/* the cadence maths, shown openly */}

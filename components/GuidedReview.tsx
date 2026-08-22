@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { submitReview } from '@/app/actions';
 import { matchTagsWithKeywords } from '@/lib/engine';
 import type { Dish, GuidedReviewTag } from '@/lib/types';
@@ -15,6 +15,9 @@ export function GuidedReview({
   tags,
   redirectTo,
   hideIntro,
+  preselectedTag,
+  preselectedDish,
+  startPositive,
 }: {
   orderId: string;
   restaurantName: string;
@@ -25,14 +28,34 @@ export function GuidedReview({
   redirectTo?: string;
   /** Suppress the step-1 title when the surrounding page already asks the question. */
   hideIntro?: boolean;
+  /** Pre-select a tag (from DishCards tap). Skips straight to step 2 with this tag active. */
+  preselectedTag?: string;
+  /** Pre-select a dish for the preselected tag. */
+  preselectedDish?: string;
+  /** Jump straight to positive submission (from "Everything was great" shortcut). */
+  startPositive?: boolean;
 }) {
   const router = useRouter();
-  const [stage, setStage] = useState<Stage>('write');
+  // If a tag was pre-selected from DishCards, skip step 1 and go straight to clarify.
+  const initialStage: Stage = preselectedTag ? 'clarify' : startPositive ? 'sending' : 'write';
+  const [stage, setStage] = useState<Stage>(initialStage);
   const [text, setText] = useState('');
-  const [rating, setRating] = useState<number | null>(null);
-  const [selected, setSelected] = useState<string[]>([]);
-  const [dishByTag, setDishByTag] = useState<Record<string, string>>({});
+  const [rating, setRating] = useState<number | null>(preselectedTag ? 3 : startPositive ? 5 : null);
+  const [selected, setSelected] = useState<string[]>(preselectedTag ? [preselectedTag] : []);
+  const [dishByTag, setDishByTag] = useState<Record<string, string>>(
+    preselectedTag && preselectedDish ? { [preselectedTag]: preselectedDish } : {},
+  );
   const [error, setError] = useState<string | null>(null);
+
+  // If startPositive, submit immediately on mount via useEffect.
+  const autoSendRef = useRef(false);
+  useEffect(() => {
+    if (startPositive && !autoSendRef.current) {
+      autoSendRef.current = true;
+      send();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /** Keyword matching, not a live LLM call — deterministic enough to demo. */
   const hits = useMemo(() => matchTagsWithKeywords(text, tags), [text, tags]);

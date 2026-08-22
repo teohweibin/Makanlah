@@ -3,7 +3,7 @@
     "id": "diner_a",
     "name": "Aina (demo profile)",
     "avatar_emoji": "🧕",
-    "wallet_address": "GLUCyax3YUrEr2qY4tBskDbvoB6oCLkUTPZ9L3jAdAwt",
+    "wallet_address": "FVXpoMUzbceanACW47QB8bTJKKmpeT8qSr7havsN9tsL",
     "notify_opt_in": true,
     "demo_role": "strong-evidence at-risk — tagged a dish issue in a past guided review",
     "expected_flag": {
@@ -17,7 +17,7 @@
     "id": "diner_b",
     "name": "Bryan (demo profile)",
     "avatar_emoji": "🧑‍💻",
-    "wallet_address": "FU7gYiYd885LQRZuMWYEMWbrpceAqVENrqoj8vieDt79",
+    "wallet_address": "9N3XfSmPUSbnsvBwo2rDcvrfdsdjoaMk9uuQqjVyVh38",
     "notify_opt_in": true,
     "demo_role": "strong-evidence at-risk — tagged wait time in a past guided review",
     "expected_flag": {
@@ -31,7 +31,7 @@
     "id": "diner_c",
     "name": "Chandra (demo profile)",
     "avatar_emoji": "🧑‍🎓",
-    "wallet_address": "FJ7MfEYyPDLbDEF4Qwr5MvwzELZV3htgAiN7F67t11y9",
+    "wallet_address": "2Bav4GZTfWAwGsS4wYPMFB5DJRqveXeBHgkhSXCfseUb",
     "notify_opt_in": true,
     "demo_role": "silent churner — opens the app, never orders; cadence not yet breached",
     "expected_flag": {
@@ -45,7 +45,7 @@
     "id": "diner_d",
     "name": "Dahlia (demo profile)",
     "avatar_emoji": "👩‍🦱",
-    "wallet_address": "BZ8QTC4QCYR3AKVjCKpffECsQdYLeABbvj9WKKK4YSSZ",
+    "wallet_address": "31ipi9FBKC5YUD4zarGYFLsLNopqE9zHhX88B5eMqVd3",
     "notify_opt_in": false,
     "demo_role": "no-evidence gap — long absence, zero review history; demos the neutral path",
     "expected_flag": {
