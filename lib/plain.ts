@@ -51,6 +51,15 @@ export function plainFlag(
   reason: ReasonType,
   toldUs: string | null,
 ): PlainFlag {
+  if (evidence === 'verified_with_photo') {
+    return {
+      headline: 'Needs attention',
+      detail: toldUs
+        ? `They told you: ${toldUs} — and sent a photo`
+        : 'They told you what went wrong, and sent a photo.',
+      tone: 'amber',
+    };
+  }
   if (evidence === 'strong') {
     return {
       headline: 'Needs attention',

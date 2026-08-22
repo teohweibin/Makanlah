@@ -9,7 +9,15 @@ import {
   selectIntervention,
 } from '@/lib/engine';
 import { loadDataset } from '@/lib/fixtures';
-import { Card, EvidenceBadge, InterventionTag, StatusBadge, evidenceHint } from '@/components/ui';
+import { getAllSubmittedReviews } from '@/lib/store';
+import {
+  Card,
+  EvidenceBadge,
+  InterventionTag,
+  StatusBadge,
+  evidenceHint,
+  evidenceLabel,
+} from '@/components/ui';
 
 const days = (n: number | null) => (n === null ? '—' : `${Number.isInteger(n) ? n : n.toFixed(1)}d`);
 
@@ -43,6 +51,11 @@ export default async function DinerReasonDetail({
   const opens = ds.appOpenEvents
     .filter((e) => e.diner_id === dinerId && e.restaurant_id === id)
     .sort((a, b) => a.days_ago - b.days_ago);
+  // The AI-analysed review for this diner at this restaurant, if they left one today.
+  const live = getAllSubmittedReviews().find(
+    (s) => s.review.diner_id === dinerId && s.review.restaurant_id === id,
+  );
+
   const relatedPain = restaurant.known_pain_points.find(
     (p) =>
       p.reason_type === flag.reason_type &&
@@ -71,13 +84,75 @@ export default async function DinerReasonDetail({
         </div>
       </header>
 
+      {/* What the diner actually said, showed, and what it means — in one place. */}
+      {live && (
+        <Card className="mb-5 overflow-hidden">
+          <div className="border-b border-stone-100 px-5 py-3">
+            <h2 className="font-medium text-stone-900">What they told you</h2>
+            <p className="mt-0.5 text-sm text-stone-500">
+              Their words, their photo, and what it adds up to.
+            </p>
+          </div>
+          <div className="grid gap-5 p-5 sm:grid-cols-[auto_1fr]">
+            {live.photo_base64 ? (
+              <figure className="sm:w-44">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`data:image/jpeg;base64,${live.photo_base64}`}
+                  alt={`Photo sent by ${diner.name}`}
+                  className="w-full rounded-lg border border-stone-200 object-cover sm:h-44"
+                />
+                <figcaption className="mt-1.5 text-xs text-stone-500">
+                  {live.photo_verdict === 'verified_with_photo'
+                    ? '📷 Checked and genuine'
+                    : live.photo_verdict === 'rejected'
+                      ? '📷 Rejected — did not look like this meal'
+                      : '📷 Could not be confirmed'}
+                </figcaption>
+              </figure>
+            ) : (
+              <div className="flex h-24 w-full items-center justify-center rounded-lg border border-dashed border-stone-200 text-sm text-stone-400 sm:h-44 sm:w-44">
+                No photo
+              </div>
+            )}
+
+            <div className="min-w-0">
+              {live.review.free_text && (
+                <blockquote className="border-l-2 border-stone-300 pl-3 text-stone-700 italic">
+                  &ldquo;{live.review.free_text}&rdquo;
+                </blockquote>
+              )}
+              {live.review.ai?.followups?.length ? (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {live.review.ai.followups.map((f) => (
+                    <span
+                      key={f}
+                      className="rounded bg-stone-100 px-2 py-0.5 text-xs text-stone-700"
+                    >
+                      {f}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              <p className="mt-4 rounded-lg bg-stone-50 px-3 py-2.5 text-stone-800">
+                {live.owner_summary}
+              </p>
+              <p className="mt-2 text-xs text-stone-500">
+                {evidenceLabel(flag.evidence_strength)} · reward given{' '}
+                {live.reward_percent}% off
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* why we flagged them */}
       <Card className="mb-5 p-5">
         <h2 className="font-medium text-stone-900">Why we flagged this</h2>
         <p className="mt-2 text-stone-700">{flag.evidence_note}</p>
         <p className="mt-3 rounded-lg bg-stone-50 px-3 py-2 text-sm text-stone-600">
           <span className="font-medium">
-            {flag.evidence_strength === 'strong' ? 'Verified' : flag.evidence_strength === 'weak' ? 'Inferred' : 'No signal'}
+            {evidenceLabel(flag.evidence_strength)}
           </span>{' '}
           — {evidenceHint(flag.evidence_strength)}. Source:{' '}
           <code className="text-stone-700">{flag.evidence_source}</code>

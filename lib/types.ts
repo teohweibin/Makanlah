@@ -10,7 +10,14 @@ export type ReasonType =
   | 'no_signal'
   | 'none';
 
-export type EvidenceStrength = 'strong' | 'weak' | 'none';
+/**
+ * 'verified_with_photo' is a stronger tier than 'strong': the diner's claim is backed by
+ * a photo the AI judged genuine. The Reason->Intervention table is only keyed on
+ * strong/weak/none, so selectIntervention() normalises it down to 'strong' when matching
+ * rules — the extra tier changes reward size and what the owner sees, not which
+ * intervention is chosen.
+ */
+export type EvidenceStrength = 'verified_with_photo' | 'strong' | 'weak' | 'none';
 
 export type RiskStatus = 'at_risk' | 'silent_churn' | 'none';
 
@@ -90,6 +97,18 @@ export interface GuidedReviewTag {
   keywords: string[];
 }
 
+/** What the AI concluded about a review. Present only on AI-analysed reviews. */
+export interface ReviewAnalysis {
+  issue_category: string;
+  combined_evidence_strength: string;
+  specific_dish_id: string | null;
+  owner_summary: string;
+  photo_verdict: string;
+  had_photo: boolean;
+  /** The follow-up options the diner actually tapped, in the AI's own words. */
+  followups: string[];
+}
+
 export interface Review {
   id: string;
   order_id: string;
@@ -100,6 +119,8 @@ export interface Review {
   /** Either `tag_id` or `tag_id:dish_id` (e.g. `dish_dry:dish_ayam_percik`). */
   guided_tags: string[];
   rating: number;
+  /** Set when Gemini analysed this review; the engine prefers it over guided tags. */
+  ai?: ReviewAnalysis;
 }
 
 export interface RiskFlag {
@@ -112,6 +133,8 @@ export interface RiskFlag {
   /** Human-readable "why", labeled verified-from-review vs inferred, for the reason-detail screen. */
   evidence_note: string;
   evidence_source: 'guided_review' | 'order_pattern' | 'app_open_log' | 'none';
+  /** Plain-English sentence from the AI, written for the restaurant owner. Null if not AI-analysed. */
+  owner_summary: string | null;
   related_dish_id: string | null;
   baseline_cadence: number | null;
   days_since_last_order: number | null;
@@ -179,6 +202,10 @@ export interface AppConfig {
   sustained_return_eval_days: number;
   sustained_return_tolerance: number;
   declining_spend_threshold: number;
+  /** Base percent for the instant review reward, before the evidence multiplier. */
+  review_reward_base_percent: number;
+  /** Hard ceiling on any reward percent, whatever a fixture or the model asks for. */
+  max_reward_percent: number;
   currency: string;
 }
 

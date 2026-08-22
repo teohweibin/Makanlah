@@ -132,10 +132,38 @@ export default async function DinerHub({
 
             {submitted && presentation ? (
               /* ── 2. reward confirmation ───────────────────────────────── */
-              <div className="text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-xl">
-                  ✓
-                </div>
+              <>
+              <div
+                className={`rounded-xl border p-4 text-center ${
+                  submitted.reward_percent === 0
+                    ? 'border-stone-300 bg-stone-50'
+                    : 'border-emerald-300 bg-emerald-50'
+                }`}
+              >
+                <p className="text-3xl" aria-hidden>
+                  {submitted.reward_percent === 0 ? '🙏' : '✅'}
+                </p>
+                <p
+                  className={`mt-2 text-lg font-medium leading-snug ${
+                    submitted.reward_percent === 0 ? 'text-stone-800' : 'text-emerald-950'
+                  }`}
+                >
+                  {submitted.reward_percent === 0
+                    ? 'Thank you — your feedback has been sent to the restaurant'
+                    : submitted.evidence === 'verified_with_photo'
+                      ? `Photo verified + specific feedback — you've earned ${submitted.reward_percent}% off this bill`
+                      : `Helpful feedback — you've earned ${submitted.reward_percent}% off this bill`}
+                </p>
+
+                {/* A silent 0% reads as a bug. Say what happened and how to earn next time. */}
+                {submitted.reward_percent === 0 && (
+                  <p className="mt-2 text-sm text-stone-600">
+                    {submitted.photo_verdict === 'rejected' ||
+                    submitted.photo_verdict === 'suspicious'
+                      ? 'We could not confirm your photo was from this meal, so no discount this time. A clear photo of the dish as it arrived earns 15% off.'
+                      : 'No discount this time — telling us exactly what went wrong (and which dish) earns 10% off, or 15% with a photo.'}
+                  </p>
+                )}
                 <div className="mt-3 flex justify-center">
                   <InterventionTag
                     icon={presentation.icon}
@@ -143,15 +171,19 @@ export default async function DinerHub({
                     color={presentation.tag_color}
                   />
                 </div>
-                <p className="mt-3 text-4xl font-semibold tracking-tight text-stone-900">
-                  {submitted.reward_percent}%
-                </p>
-                <p className="text-sm font-medium uppercase tracking-wide text-stone-500">
-                  off this bill
-                </p>
-                <p className="mt-2 text-stone-600">{presentation.body}</p>
+                {submitted.owner_summary && (
+                  <p className="mt-3 text-sm text-stone-600">
+                    What {restaurant.name} will see: &ldquo;{submitted.owner_summary}&rdquo;
+                  </p>
+                )}
+              </div>
+              <div className="mt-4 text-center">
 
-                <div className="mt-4 rounded-lg bg-stone-50 px-3 py-3 text-left text-sm">
+                <div
+                  className={`mt-4 rounded-lg bg-stone-50 px-3 py-3 text-left text-sm ${
+                    submitted.reward_percent === 0 ? 'hidden' : ''
+                  }`}
+                >
                   {submitted.mint_address ? (
                     <p className="text-stone-700">
                       🪙 Your reward token has been sent to your wallet.{' '}
@@ -167,26 +199,18 @@ export default async function DinerHub({
                   )}
                 </div>
 
-                <p className="mt-3 text-sm text-stone-500">
-                  You told us:{' '}
-                  {submitted.review.guided_tags
-                    .map((raw) => {
-                      const [tagId, dishId] = raw.split(':');
-                      const tag = ds.guidedReviewTags.find((t) => t.id === tagId);
-                      const dish = dishId
-                        ? restaurant.known_dishes.find((d) => d.id === dishId)
-                        : null;
-                      return `${tag?.label ?? tagId}${dish ? ` (${dish.name})` : ''}`;
-                    })
-                    .join(', ')}
-                </p>
+                {submitted.review.ai?.followups?.length ? (
+                  <p className="mt-3 text-sm text-stone-500">
+                    You told us: {submitted.review.ai.followups.join(', ')}
+                  </p>
+                ) : null}
               </div>
+              </>
             ) : (
               <GuidedReview
                 orderId={activeOrder.id}
                 restaurantName={restaurant.name}
                 dishes={dishes}
-                tags={ds.guidedReviewTags}
                 hideIntro
               />
             )}

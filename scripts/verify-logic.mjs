@@ -7,7 +7,7 @@
 
 import {
   baselineCadence, dashboardMetrics, daysBetweenConsecutiveOrders, daysSinceLastOrder,
-  evaluateRestaurant, isAtRisk, isSilentChurn, matchTagsFromText, ordersFor,
+  evaluateRestaurant, isAtRisk, isSilentChurn, ordersFor,
   recomputeSustainedReturn, selectIntervention, spendTrend, sustainedReturnStatus,
 } from '../lib/engine.ts';
 import { ANCHOR_RESTAURANT_ID, SECOND_RESTAURANT_ID, loadDataset } from '../lib/fixtures.ts';
@@ -135,9 +135,6 @@ console.log(`  ${dOk ? 'PASS' : 'FAIL'}  declining spend: ${pct(dtrend)} -> `
   + `${selectIntervention('declining_spend', 'weak', ds.interventionLookup)}`
   + `  (no fixture diner uses this row — verified synthetically)`);
 
-const kw = matchTagsFromText('I waited ages and the chicken was dry', ds.guidedReviewTags).map((t) => t.id);
-console.log(`  ${check('keyword match', kw, ['dish_dry', 'wait_time_long']) ? 'PASS' : 'FAIL'}`
-  + `  keyword matcher on "I waited ages and the chicken was dry" -> [${kw.join(', ')}]`);
 
 /* ── 6. sustained return + metrics ──────────────────────────────────────── */
 

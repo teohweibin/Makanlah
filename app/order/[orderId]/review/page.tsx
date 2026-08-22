@@ -38,7 +38,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ orderId
           orderId={order.id}
           restaurantName={restaurant.name}
           dishes={dishes}
-          tags={ds.guidedReviewTags}
+          redirectTo={`/order/${order.id}/reward`}
         />
       </div>
     </main>

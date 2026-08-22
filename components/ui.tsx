@@ -38,13 +38,18 @@ export function InterventionTag({
  * be able to tell "she told us this" apart from "we guessed this" at a glance.
  */
 const EVIDENCE: Record<EvidenceStrength, { label: string; className: string; hint: string }> = {
+  verified_with_photo: {
+    label: 'Verified — photo + review',
+    className: 'bg-emerald-200 text-emerald-950 border-emerald-400',
+    hint: 'They showed us — a photo backs up what they said',
+  },
   strong: {
-    label: 'Verified',
+    label: 'Verified from review',
     className: 'bg-emerald-100 text-emerald-900 border-emerald-300',
     hint: 'From a guided review — the diner told us this themselves',
   },
   weak: {
-    label: 'Inferred',
+    label: 'Inferred from behavior',
     className: 'bg-amber-100 text-amber-900 border-amber-300',
     hint: 'Pattern-based guess — not confirmed by the diner',
   },
@@ -69,6 +74,11 @@ export function EvidenceBadge({ strength }: { strength: EvidenceStrength }) {
 
 export function evidenceHint(strength: EvidenceStrength) {
   return EVIDENCE[strength].hint;
+}
+
+/** Human-readable label for an evidence tier. The only place these strings live. */
+export function evidenceLabel(strength: EvidenceStrength) {
+  return EVIDENCE[strength].label;
 }
 
 const STATUS: Record<Exclude<RiskStatus, 'none'>, { label: string; className: string }> = {

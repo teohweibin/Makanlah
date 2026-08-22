@@ -1,94 +1,154 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
-import { submitReview } from '@/app/actions';
-import { matchTagsWithKeywords } from '@/lib/engine';
-import type { Dish, GuidedReviewTag } from '@/lib/types';
+// Guided review, AI-driven.
+//
+// There is no keyword matching here any more. Every follow-up option shown to the diner
+// comes from Gemini's reading of what they actually wrote and photographed — so the
+// options fit the meal ("Lacked enough sauce") instead of a fixed catalogue.
+//
+// The Gemini call goes through /api/analyze-review, never from this component directly:
+// the API key must never reach the browser bundle.
 
-type Stage = 'write' | 'clarify' | 'dish' | 'sending';
+import { useRouter } from 'next/navigation';
+import { useRef, useState } from 'react';
+import { submitReview } from '@/app/actions';
+import type { Dish } from '@/lib/types';
+
+type Stage = 'write' | 'analysing' | 'followups' | 'sending';
+
+interface Analysis {
+  sentiment: string;
+  issue_category: string;
+  specific_dish_mentioned: string | null;
+  suggested_followup_options: string[];
+  combined_evidence_strength: string;
+  owner_summary: string;
+  photo_verdict: string;
+}
+
+/** Reads a File into base64 with the data: URI prefix stripped, as the API expects. */
+function toBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result);
+      resolve(result.replace(/^data:image\/[a-zA-Z+]+;base64,/, ''));
+    };
+    reader.onerror = () => reject(new Error('Could not read that image'));
+    reader.readAsDataURL(file);
+  });
+}
 
 export function GuidedReview({
   orderId,
   restaurantName,
   dishes,
-  tags,
   redirectTo,
   hideIntro,
 }: {
   orderId: string;
   restaurantName: string;
-  /** Only the dishes on THIS order — follow-up chips never offer a dish they didn't eat. */
+  /** Shown for context only — the server derives the real dish list from the order. */
   dishes: Dish[];
-  tags: GuidedReviewTag[];
-  /** Where to go after submitting. Omit to confirm in place on the same page. */
   redirectTo?: string;
-  /** Suppress the step-1 title when the surrounding page already asks the question. */
   hideIntro?: boolean;
 }) {
   const router = useRouter();
+  const fileInput = useRef<HTMLInputElement>(null);
+
   const [stage, setStage] = useState<Stage>('write');
   const [text, setText] = useState('');
   const [rating, setRating] = useState<number | null>(null);
-  const [selected, setSelected] = useState<string[]>([]);
-  const [dishByTag, setDishByTag] = useState<Record<string, string>>({});
+  const [photo, setPhoto] = useState<{ name: string; preview: string; base64: string } | null>(
+    null,
+  );
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [chosen, setChosen] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  /** Keyword matching, not a live LLM call — deterministic enough to demo. */
-  const hits = useMemo(() => matchTagsWithKeywords(text, tags), [text, tags]);
-  const suggestedIds = useMemo(() => new Set(hits.map((h) => h.tag.id)), [hits]);
-
-  const problemTags = tags.filter((t) => t.reason_type !== 'none');
-  const positiveTag = tags.find((t) => t.reason_type === 'none');
-
-  /** Tags that still need "which dish?" answered. A one-dish order answers itself. */
-  const pendingDishTags = selected
-    .map((id) => tags.find((t) => t.id === id))
-    .filter((t): t is GuidedReviewTag => !!t && t.requires_dish)
-    .filter((t) => dishes.length > 1 && !dishByTag[t.id]);
-
-  const toggle = (id: string) =>
-    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-
-  function goFromWrite() {
-    // Anything the keyword matcher spotted is pre-ticked, but the diner confirms it —
-    // we never file a complaint on their behalf that they didn't agree to.
-    setSelected(hits.map((h) => h.tag.id));
-    setStage('clarify');
-  }
-
-  function goFromClarify() {
-    const needsDish = selected
-      .map((id) => tags.find((t) => t.id === id))
-      .some((t) => t?.requires_dish);
-    if (needsDish && dishes.length > 1) {
-      setStage('dish');
+  async function pickPhoto(file: File | undefined) {
+    if (!file) return;
+    setError(null);
+    if (!file.type.startsWith('image/')) {
+      setError('That file is not an image.');
       return;
     }
-    void send();
+    if (file.size > 3_000_000) {
+      setError('That photo is too large — please pick one under 3MB.');
+      return;
+    }
+    try {
+      const base64 = await toBase64(file);
+      setPhoto({ name: file.name, preview: URL.createObjectURL(file), base64 });
+    } catch {
+      setError('Could not read that image.');
+    }
   }
 
-  async function send() {
+  async function analyse() {
+    setStage('analysing');
+    setError(null);
+    try {
+      const res = await fetch('/api/analyze-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          reviewText: text.trim(),
+          base64ImageData: photo?.base64,
+        }),
+      });
+      const data = await res.json();
+      const result: Analysis | null = data.analysis ?? null;
+
+      if (!result) {
+        setError('We could not read your review just now. You can still send it.');
+        setStage('write');
+        return;
+      }
+
+      setAnalysis(result);
+
+      const wantsFollowups =
+        (result.sentiment === 'negative' || result.sentiment === 'neutral') &&
+        Array.isArray(result.suggested_followup_options) &&
+        result.suggested_followup_options.length > 0;
+
+      if (wantsFollowups) {
+        setStage('followups');
+      } else {
+        await send(result, []);
+      }
+    } catch {
+      setError('We could not reach our review helper. Please try again.');
+      setStage('write');
+    }
+  }
+
+  async function send(result: Analysis, followups: string[]) {
     setStage('sending');
     setError(null);
-    const guided_tags = selected.map((id) => {
-      const tag = tags.find((t) => t.id === id);
-      if (!tag?.requires_dish) return id;
-      const dishId = dishes.length === 1 ? dishes[0].id : dishByTag[id];
-      return dishId ? `${id}:${dishId}` : id;
-    });
     try {
       await submitReview({
         order_id: orderId,
         free_text: text.trim(),
-        guided_tags: guided_tags.length ? guided_tags : positiveTag ? [positiveTag.id] : [],
         rating: rating ?? 3,
+        analysis: {
+          issue_category: result.issue_category,
+          combined_evidence_strength: result.combined_evidence_strength,
+          specific_dish_mentioned: result.specific_dish_mentioned,
+          owner_summary: result.owner_summary,
+          photo_verdict: result.photo_verdict,
+        },
+        followups,
+        had_photo: !!photo,
+        photo_base64: photo?.base64 ?? null,
       });
       if (redirectTo) router.push(redirectTo);
       else router.refresh();
     } catch {
       setError('Could not save that — try again.');
-      setStage('clarify');
+      setStage('followups');
     }
   }
 
@@ -99,173 +159,178 @@ export function GuidedReview({
         : 'border-stone-300 bg-white text-stone-700 hover:border-stone-500'
     }`;
 
-  /* ── step 1: free text + rating ──────────────────────────────────────── */
-  if (stage === 'write') {
+  /* ── loading ─────────────────────────────────────────────────────────── */
+  if (stage === 'analysing' || stage === 'sending') {
     return (
-      <div>
-        <Step n={1} of={3} label="How was it?" />
-        {!hideIntro && (
-          <>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-stone-900">
-              How was {restaurantName}?
-            </h1>
-            <p className="mt-1 text-stone-500">
-              A word or two is plenty — we&rsquo;ll ask the rest.
-            </p>
-          </>
-        )}
-
-        <div className="mt-5 flex gap-2">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => setRating(n)}
-              aria-label={`${n} star${n > 1 ? 's' : ''}`}
-              className={`h-11 w-11 rounded-full border text-lg transition ${
-                rating !== null && n <= rating
-                  ? 'border-amber-400 bg-amber-50'
-                  : 'border-stone-300 bg-white hover:border-stone-400'
-              }`}
-            >
-              {rating !== null && n <= rating ? '★' : '☆'}
-            </button>
-          ))}
-        </div>
-
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={4}
-          placeholder="e.g. the chicken was a bit dry"
-          className="mt-5 w-full rounded-xl border border-stone-300 bg-white p-3.5 text-stone-900 placeholder:text-stone-400 focus:border-stone-500 focus:outline-none"
-        />
-
-        {hits.length > 0 && (
-          <p className="mt-2 text-sm text-stone-500">
-            We picked up{' '}
-            {hits.map((h, i) => (
-              <span key={h.tag.id}>
-                {i > 0 && ' and '}
-                <span className="rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-900">
-                  &ldquo;{h.keyword}&rdquo;
-                </span>
-              </span>
-            ))}
-            {' '}&mdash; one tap to confirm next.
-          </p>
-        )}
-
-        <button
-          type="button"
-          onClick={goFromWrite}
-          className="mt-5 w-full rounded-xl bg-stone-900 px-4 py-3.5 font-medium text-white transition hover:bg-stone-700"
-        >
-          Continue
-        </button>
+      <div className="py-10 text-center">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-stone-200 border-t-stone-700" />
+        <p className="mt-4 font-medium text-stone-900">
+          {stage === 'analysing' ? 'Checking your review…' : 'Sorting your reward…'}
+        </p>
+        <p className="mt-1 text-sm text-stone-500">
+          {photo && stage === 'analysing'
+            ? 'Reading your photo too — this takes a few seconds.'
+            : 'One moment.'}
+        </p>
       </div>
     );
   }
 
-  /* ── step 2: confirm what they meant, tap-only ───────────────────────── */
-  if (stage === 'clarify' || stage === 'sending') {
+  /* ── follow-ups, entirely from the AI ────────────────────────────────── */
+  if (stage === 'followups' && analysis) {
     return (
       <div>
-        <Step n={2} of={3} label="What did you mean?" />
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-stone-900">
-          {hits.length > 0 ? (
-            <>
-              You said{' '}
-              <span className="rounded bg-amber-100 px-1.5 text-amber-900">
-                &ldquo;{hits[0].keyword}&rdquo;
-              </span>
-              &nbsp;&mdash; which of these?
-            </>
-          ) : (
-            'Anything we should know?'
-          )}
-        </h1>
+        <Step n={2} of={2} label="One more tap" />
+        <h2 className="mt-3 text-xl font-semibold tracking-tight text-stone-900">
+          Which of these fits best?
+        </h2>
         <p className="mt-1 text-stone-500">
-          Tap what applies. Nothing to type — this is the part people actually finish.
+          Tap what applies — it helps the kitchen fix the right thing.
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          {problemTags.map((t) => (
+          {analysis.suggested_followup_options.map((option) => (
             <button
-              key={t.id}
+              key={option}
               type="button"
-              onClick={() => toggle(t.id)}
-              className={`${chip(selected.includes(t.id))} ${
-                suggestedIds.has(t.id) && !selected.includes(t.id) ? 'ring-2 ring-amber-300' : ''
-              }`}
+              onClick={() =>
+                setChosen((prev) =>
+                  prev.includes(option) ? prev.filter((x) => x !== option) : [...prev, option],
+                )
+              }
+              className={chip(chosen.includes(option))}
             >
-              {t.label}
+              {option}
             </button>
           ))}
         </div>
 
-        {positiveTag && (
-          <button
-            type="button"
-            onClick={() => {
-              setSelected([]);
-              void send();
-            }}
-            className="mt-4 text-sm text-stone-500 underline underline-offset-4 hover:text-stone-800"
-          >
-            Actually, {positiveTag.label.toLowerCase()} &rarr;
-          </button>
+        {photo && (
+          <p className="mt-4 text-sm text-stone-500">
+            {analysis.photo_verdict === 'verified_with_photo'
+              ? '📸 Your photo backs this up — that earns you more.'
+              : analysis.photo_verdict === 'rejected'
+                ? "📸 We couldn't use that photo, but your written feedback still counts."
+                : '📸 Photo received.'}
+          </p>
         )}
 
         {error && <p className="mt-3 text-sm text-rose-700">{error}</p>}
 
         <button
           type="button"
-          disabled={stage === 'sending'}
-          onClick={goFromClarify}
-          className="mt-6 w-full rounded-xl bg-stone-900 px-4 py-3.5 font-medium text-white transition hover:bg-stone-700 disabled:opacity-60"
+          onClick={() => void send(analysis, chosen)}
+          className="mt-6 w-full rounded-xl bg-stone-900 px-4 py-3.5 font-medium text-white transition hover:bg-stone-700"
         >
-          {stage === 'sending' ? 'Sending…' : 'Continue'}
+          Confirm and get my reward
+        </button>
+        <button
+          type="button"
+          onClick={() => void send(analysis, [])}
+          className="mt-2 w-full text-sm text-stone-500 underline underline-offset-4 hover:text-stone-800"
+        >
+          None of these &rarr;
         </button>
       </div>
     );
   }
 
-  /* ── step 3: which dish — chips are only what they actually ordered ──── */
-  const active = pendingDishTags[0];
+  /* ── write: rating, text, optional photo ─────────────────────────────── */
   return (
     <div>
-      <Step n={3} of={3} label="Which dish?" />
-      <h1 className="mt-3 text-2xl font-semibold tracking-tight text-stone-900">
-        {active ? `${active.label} — which one?` : 'Almost done'}
-      </h1>
-      <p className="mt-1 text-stone-500">From your order on this visit.</p>
-
-      {active && (
-        <div className="mt-5 flex flex-wrap gap-2">
-          {dishes.map((d) => (
-            <button
-              key={d.id}
-              type="button"
-              onClick={() => setDishByTag((prev) => ({ ...prev, [active.id]: d.id }))}
-              className={chip(dishByTag[active.id] === d.id)}
-            >
-              {d.name}
-            </button>
-          ))}
-        </div>
+      <Step n={1} of={2} label="How was it?" />
+      {!hideIntro && (
+        <>
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-stone-900">
+            How was {restaurantName}?
+          </h2>
+          <p className="mt-1 text-stone-500">
+            A word or two is plenty — we&rsquo;ll ask the rest.
+          </p>
+        </>
       )}
+
+      <div className="mt-5 flex gap-2">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => setRating(n)}
+            aria-label={`${n} star${n > 1 ? 's' : ''}`}
+            className={`h-11 w-11 rounded-full border text-lg transition ${
+              rating !== null && n <= rating
+                ? 'border-amber-400 bg-amber-50'
+                : 'border-stone-300 bg-white hover:border-stone-400'
+            }`}
+          >
+            {rating !== null && n <= rating ? '★' : '☆'}
+          </button>
+        ))}
+      </div>
+
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={4}
+        maxLength={2000}
+        placeholder="e.g. the chicken was a bit dry"
+        className="mt-5 w-full rounded-xl border border-stone-300 bg-white p-3.5 text-stone-900 placeholder:text-stone-400 focus:border-stone-500 focus:outline-none"
+      />
+
+      {/* optional photo */}
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => void pickPhoto(e.target.files?.[0])}
+      />
+
+      {photo ? (
+        <div className="mt-3 flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-2.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={photo.preview}
+            alt="Your photo of the meal"
+            className="h-14 w-14 rounded-lg object-cover"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm text-stone-800">{photo.name}</p>
+            <p className="text-xs text-stone-500">A photo can earn you a bigger reward.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPhoto(null)}
+            className="shrink-0 text-sm text-stone-500 underline underline-offset-4"
+          >
+            Remove
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileInput.current?.click()}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-stone-300 bg-white px-4 py-3 text-sm text-stone-600 transition hover:border-stone-500"
+        >
+          📷 Add a photo <span className="text-stone-400">(optional — earns more)</span>
+        </button>
+      )}
+
+      {error && <p className="mt-3 text-sm text-rose-700">{error}</p>}
 
       <button
         type="button"
-        disabled={!!active && !dishByTag[active.id]}
-        onClick={() => {
-          if (pendingDishTags.length <= 1) void send();
-        }}
-        className="mt-6 w-full rounded-xl bg-stone-900 px-4 py-3.5 font-medium text-white transition hover:bg-stone-700 disabled:opacity-40"
+        disabled={!text.trim() && !photo}
+        onClick={() => void analyse()}
+        className="mt-5 w-full rounded-xl bg-stone-900 px-4 py-3.5 font-medium text-white transition hover:bg-stone-700 disabled:opacity-40"
       >
-        {pendingDishTags.length > 1 ? 'Next' : 'Send review'}
+        Continue
       </button>
+      {!text.trim() && !photo && (
+        <p className="mt-2 text-center text-xs text-stone-400">
+          Write a few words or add a photo to continue.
+        </p>
+      )}
     </div>
   );
 }

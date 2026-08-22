@@ -12,7 +12,7 @@ export interface CampaignTarget {
   diner_id: string;
   name: string;
   avatar_emoji: string;
-  evidence_strength: 'strong' | 'weak' | 'none';
+  evidence_strength: 'verified_with_photo' | 'strong' | 'weak' | 'none';
   status: string;
   intervention_type: string;
   icon: string;
@@ -24,7 +24,13 @@ type FilterId = 'all' | 'verified' | 'silent' | 'no_signal';
 
 const FILTERS: Array<{ id: FilterId; label: string; match: (t: CampaignTarget) => boolean }> = [
   { id: 'all', label: 'Everyone flagged', match: () => true },
-  { id: 'verified', label: 'They told us why', match: (t) => t.evidence_strength === 'strong' },
+  {
+    id: 'verified',
+    label: 'They told us why',
+    // Photo-verified diners are told-us-why too, only more certainly.
+    match: (t) =>
+      t.evidence_strength === 'strong' || t.evidence_strength === 'verified_with_photo',
+  },
   { id: 'silent', label: 'Browsing but not ordering', match: (t) => t.status === 'silent_churn' },
   { id: 'no_signal', label: 'Just been a while', match: (t) => t.evidence_strength === 'none' },
 ];

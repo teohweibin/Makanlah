@@ -6,5 +6,7 @@
   "sustained_return_eval_days": 30,
   "sustained_return_tolerance": 0.2,
   "declining_spend_threshold": 0.25,
-  "currency": "MYR"
+  "currency": "MYR",
+  "review_reward_base_percent": 10,
+  "max_reward_percent": 50
 }

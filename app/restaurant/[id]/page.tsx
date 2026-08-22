@@ -14,7 +14,12 @@ import {
 } from '@/components/ChainPanels';
 import { CampaignTrigger } from '@/components/CampaignTrigger';
 import { TodaysAction, type ActionGroup } from '@/components/TodaysAction';
-import { dashboardMetrics, evaluateRestaurant, recomputeSustainedReturn } from '@/lib/engine';
+import {
+  dashboardMetrics,
+  evaluateRestaurant,
+  isFirstHand,
+  recomputeSustainedReturn,
+} from '@/lib/engine';
 import { loadDataset } from '@/lib/fixtures';
 import { plainCadence, plainFlag, plainGap, plainToldUs } from '@/lib/plain';
 import { Card } from '@/components/ui';
@@ -55,12 +60,12 @@ export default async function RestaurantDashboard({
   // Opted-out diners can never be in an action group — the Settings toggle is binding.
   const reachable = rows.filter((r) => r.diner.notify_opt_in);
   const buckets: Array<{ key: ActionGroup['key']; members: typeof reachable }> = [
-    { key: 'told_us', members: reachable.filter((r) => r.flag.evidence_strength === 'strong') },
+    { key: 'told_us', members: reachable.filter((r) => isFirstHand(r.flag.evidence_strength)) },
     { key: 'browsing', members: reachable.filter((r) => r.flag.status === 'silent_churn') },
     {
       key: 'been_a_while',
       members: reachable.filter(
-        (r) => r.flag.evidence_strength !== 'strong' && r.flag.status !== 'silent_churn',
+        (r) => !isFirstHand(r.flag.evidence_strength) && r.flag.status !== 'silent_churn',
       ),
     },
   ];
@@ -164,13 +169,25 @@ export default async function RestaurantDashboard({
                           />
                           {plain.headline}
                         </span>
+                        {flag.evidence_strength === 'verified_with_photo' && (
+                          <span
+                            title="They sent a photo, and it checked out"
+                            className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-900"
+                          >
+                            📷 Photo
+                          </span>
+                        )}
                         {!diner.notify_opt_in && (
                           <span className="rounded bg-stone-100 px-1.5 py-0.5 text-[11px] text-stone-500">
                             nudges off
                           </span>
                         )}
                       </div>
-                      <p className="mt-1 text-stone-600">{plain.detail}</p>
+                      {/* The AI's own sentence when we have one — it is written for the
+                          owner and says more than any template we could compose. */}
+                      <p className="mt-1 text-stone-600">
+                        {flag.owner_summary ?? plain.detail}
+                      </p>
                     </div>
                   </div>
 
