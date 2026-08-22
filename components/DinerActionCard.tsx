@@ -16,7 +16,7 @@ export interface DinerCardData {
   reason: string;
   dishId: string | null;
   dishName: string | null;
-  evidenceStrength: 'strong' | 'weak' | 'none';
+  evidenceStrength: 'strong' | 'weak' | 'none' | 'verified_with_photo';
   status: string;
   daysSinceLastVisit: number | null;
   visitCadence: number | null;
@@ -42,6 +42,11 @@ const EVIDENCE_STYLES: Record<string, { bg: string; text: string; label: string 
   strong: { bg: 'bg-[var(--color-success-light)]', text: 'text-[var(--color-success)]', label: 'Verified' },
   weak: { bg: 'bg-[var(--color-warning-light)]', text: 'text-[var(--color-warning)]', label: 'Inferred' },
   none: { bg: 'bg-[var(--color-paper)]', text: 'text-[var(--color-muted)]', label: 'No signal' },
+  verified_with_photo: {
+    bg: 'bg-[var(--color-success-light)]',
+    text: 'text-[var(--color-success)]',
+    label: 'Verified with photo',
+  },
 };
 
 export function DinerActionCard({ data }: { data: DinerCardData }) {
