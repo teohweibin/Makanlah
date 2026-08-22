@@ -601,7 +601,7 @@ export function computeTrustScore(ds: Dataset, dinerId: string): TrustScore {
 /* fraud prevention: review rate limiting                                */
 /* ------------------------------------------------------------------ */
 
-import { getRuntimeReviews } from './store';
+import { getRuntimeReviews } from './store.ts';
 
 /**
  * Check whether a diner has exceeded their daily review cap.
