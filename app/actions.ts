@@ -249,18 +249,23 @@ export async function markIssueFixed(input: {
 
   const dish = restaurant.known_dishes.find((d) => d.id === input.dish_id);
   const feedback = getFeedbackForDish(input.dish_id);
-  const affectedDinerIds = [...new Set(feedback.map((f) => f.diner_id))];
 
-  const rewardPercent = [10, 15][Math.floor(Math.random() * 2)];
+  // Also include diners from seeded action items (for demo)
+  const { default: seedItems } = await import('@/data/action_items_seed.json');
+  const seededDiners = (seedItems as Array<{ dishId: string | null; restaurantId: string; dinerId: string }>)
+    .filter((s) => s.dishId === input.dish_id && s.restaurantId === input.restaurant_id)
+    .map((s) => s.dinerId);
+
+  const affectedDinerIds = [...new Set([...feedback.map((f) => f.diner_id), ...seededDiners])];
+
+  const rewardPercent = 5;
   const rewardDescription = dish
-    ? `1 Free ${dish.name}`
-    : `${rewardPercent}% off your next order`;
-  const rewardValue = dish
-    ? `RM ${dish.price.toFixed(2)}`
-    : `${rewardPercent}%`;
+    ? `We improved the ${dish.name} — come try it again!`
+    : 'We made improvements based on your feedback!';
+  const rewardValue = '5% off';
   const defaultMessage = dish
-    ? `We've fixed the ${dish.name}! Come back and try it — this one's on us.`
-    : 'We listened to your feedback and made changes. Come see for yourself!';
+    ? `We heard you about the ${dish.name} and made changes. We\u2019d love for you to try it again \u2014 your opinion matters to us.`
+    : 'We listened to your feedback and made improvements. Come see for yourself!';
 
   let invited = 0;
   for (const dinerId of affectedDinerIds) {

@@ -1,0 +1,391 @@
+{
+  "recommendations": [
+    {
+      "id": "bihun_soggy",
+      "keywords": ["soggy", "mushy", "too soft", "overcooked", "lembik"],
+      "dish": "bihun",
+      "rootCause": "Overcooking or soaking too long before frying",
+      "action": "Reduce bihun soaking time from 10 min to 5-6 min in room temp water. If stir-frying, add bihun in the last 2-3 minutes only, over high heat (wok hei).",
+      "category": "cooking_time",
+      "priority": "quick"
+    },
+    {
+      "id": "noodles_clumping",
+      "keywords": ["clumpy", "sticking together", "stuck", "lumpy noodles"],
+      "dish": "yellow noodles / mee",
+      "rootCause": "Insufficient oil coating after blanching or noodles left standing too long",
+      "action": "Toss blanched noodles with 1 tsp oil per 100g immediately after draining. Do not pre-portion noodles more than 20 min before service; keep covered.",
+      "category": "prep_technique",
+      "priority": "quick"
+    },
+    {
+      "id": "rice_too_hard",
+      "keywords": ["hard", "undercooked", "crunchy", "raw rice", "keras"],
+      "dish": "rice",
+      "rootCause": "Insufficient water or cooking time",
+      "action": "Increase water ratio from 1:1.5 to 1:1.75 (rice:water). Let rice rest 10 min after cooking before opening lid.",
+      "category": "cooking_time",
+      "priority": "quick"
+    },
+    {
+      "id": "rice_too_wet",
+      "keywords": ["mushy rice", "watery rice", "clumpy rice", "porridge-like"],
+      "dish": "rice",
+      "rootCause": "Too much water or rice not rinsed of excess starch",
+      "action": "Rinse rice 2-3 times until water runs mostly clear. Reduce water ratio to 1:1.2 for jasmine rice. Use rice cooker's 'keep warm' function sparingly—over 2 hours causes moisture buildup.",
+      "category": "cooking_time",
+      "priority": "quick"
+    },
+    {
+      "id": "nasi_lemak_rice_bland",
+      "keywords": ["bland rice", "no coconut taste", "plain", "tasteless rice"],
+      "dish": "nasi lemak rice",
+      "rootCause": "Insufficient coconut milk or pandan, or coconut milk added too late",
+      "action": "Use minimum 200ml coconut milk per 500g rice. Add 2-3 knotted pandan leaves and 1/2 tsp salt at start of cooking, not after.",
+      "category": "seasoning",
+      "priority": "quick"
+    },
+    {
+      "id": "fried_rice_greasy",
+      "keywords": ["oily", "greasy", "too much oil", "berminyak"],
+      "dish": "fried rice",
+      "rootCause": "Excess oil used to prevent sticking, or wok not hot enough causing rice to absorb oil instead of frying",
+      "action": "Limit oil to 2 tbsp per 300g rice portion. Preheat wok until oil shimmers (~190°C) before adding rice. Use day-old refrigerated rice only—fresh rice has excess moisture that forces more oil use.",
+      "category": "cooking_technique",
+      "priority": "quick"
+    },
+    {
+      "id": "chicken_dry",
+      "keywords": ["dry", "tough", "hard", "chewy"],
+      "dish": "chicken",
+      "rootCause": "Overcooking or lack of marinade fat/moisture",
+      "action": "1) Reduce grilling/frying time by 2-3 minutes. 2) Add 1 tbsp oil or yogurt to marinade. 3) Rest chicken 5 min before serving to retain juices. 4) Use meat thermometer—pull at 74°C internal, not higher.",
+      "category": "cooking_time",
+      "priority": "quick"
+    },
+    {
+      "id": "chicken_not_fresh",
+      "keywords": ["not fresh", "smells off", "bad smell", "spoiled", "funny taste", "busuk"],
+      "dish": "chicken",
+      "rootCause": "Old stock or poor supplier quality/cold chain break",
+      "action": "1) Check delivery date—chicken must be used within 2 days of delivery. 2) Contact supplier for freshness guarantee in writing. 3) Store at 0-4°C immediately on arrival, never leave at room temp over 20 min. 4) Do a smell/color check before every prep shift.",
+      "category": "supplier",
+      "priority": "urgent"
+    },
+    {
+      "id": "chicken_inconsistent",
+      "keywords": ["inconsistent", "sometimes good", "varies", "different each time", "not same"],
+      "dish": "chicken",
+      "rootCause": "No standardized cooking process across shifts/cooks",
+      "action": "1) Create QC checklist: weigh portions (150g each), use timer for cooking, measure oil temperature (175°C for frying). 2) Train all kitchen staff on same recipe card. 3) Run daily taste test before service opens.",
+      "category": "quality_control",
+      "priority": "medium"
+    },
+    {
+      "id": "chicken_undercooked",
+      "keywords": ["raw", "pink inside", "undercooked", "bloody"],
+      "dish": "chicken",
+      "rootCause": "Oil temperature too low or pieces too large/uneven thickness",
+      "action": "Butterfly or pound thick pieces to uniform 1.5-2cm thickness. Fry at 170-175°C for 6-8 min per side depending on cut. Always confirm 74°C internal temp with thermometer for whole cuts.",
+      "category": "food_safety",
+      "priority": "urgent"
+    },
+    {
+      "id": "satay_dry_tough",
+      "keywords": ["dry satay", "tough satay", "hard to chew"],
+      "dish": "satay",
+      "rootCause": "Marinade lacks enough oil/sugar, or over-grilled on high heat",
+      "action": "Marinate minimum 4 hours (ideally overnight) with 2 tbsp oil per 500g meat. Grill over medium charcoal heat, basting with oil every 2 min, total 6-8 min turning frequently—not continuous high flame.",
+      "category": "cooking_technique",
+      "priority": "medium"
+    },
+    {
+      "id": "beef_tough",
+      "keywords": ["tough beef", "chewy beef", "rubbery", "hard to cut"],
+      "dish": "beef",
+      "rootCause": "Wrong cut for cooking method, or cut against the wrong direction of the grain, or insufficient tenderizing",
+      "action": "For stir-fry, slice beef thinly (3-4mm) against the grain. Velvet with 1 tsp baking soda + 1 tbsp water per 300g beef, rest 15-20 min, rinse before cooking. For stewing cuts, braise minimum 90 min at low simmer.",
+      "category": "prep_technique",
+      "priority": "medium"
+    },
+    {
+      "id": "beef_rendang_not_tender",
+      "keywords": ["hard rendang meat", "beef not soft", "chewy rendang"],
+      "dish": "beef rendang",
+      "rootCause": "Insufficient simmering time or heat too high causing liquid to reduce before meat softens",
+      "action": "Use stewing cuts (brisket/shin), cut into 4cm cubes. Simmer minimum 2-2.5 hours on low heat, adding santan gradually. If liquid reduces too fast, add water 100ml at a time to extend cooking without drying out spices.",
+      "category": "cooking_time",
+      "priority": "medium"
+    },
+    {
+      "id": "fish_fishy_smell",
+      "keywords": ["fishy smell", "smells bad", "off fish", "strong odor"],
+      "dish": "fish",
+      "rootCause": "Fish not fresh, improperly stored, or not cleaned of blood line/gills",
+      "action": "1) Source fish with clear eyes, red gills, firm flesh—reject cloudy-eyed stock. 2) Remove gills, blood line, and dark membrane in cavity before storage. 3) Store on ice at 0-2°C, use within 24 hours. 4) Rinse with lime/vinegar water before cooking to neutralize odor.",
+      "category": "supplier",
+      "priority": "urgent"
+    },
+    {
+      "id": "fish_overcooked_dry",
+      "keywords": ["dry fish", "overcooked fish", "falling apart", "tough fish"],
+      "dish": "fish",
+      "rootCause": "Cooking time too long for fillet thickness",
+      "action": "For steaming, use 8-10 min per inch of thickness, test with fork—flesh should flake but stay moist. For frying, 3-4 min per side for fillets under 2cm. Remove from heat immediately once opaque throughout.",
+      "category": "cooking_time",
+      "priority": "quick"
+    },
+    {
+      "id": "fish_bones_complaint",
+      "keywords": ["too many bones", "bones everywhere", "choking hazard"],
+      "dish": "fish",
+      "rootCause": "Poor deboning technique or wrong fish cut served without warning",
+      "action": "Train kitchen staff on proper deboning with tweezers for pin bones. For dishes with bony fish (e.g., whole steamed fish), note on menu 'bone-in' clearly. Consider offering fillet option for popular dishes.",
+      "category": "prep_technique",
+      "priority": "medium"
+    },
+    {
+      "id": "prawns_rubbery",
+      "keywords": ["rubbery prawns", "tough prawns", "chewy shrimp"],
+      "dish": "prawns",
+      "rootCause": "Overcooking—prawns cook very fast and continue cooking after removal from heat",
+      "action": "Cook prawns just until they curl into a 'C' shape and turn opaque pink, about 2-3 min for medium prawns. Remove from heat immediately (they carry-over cook). Do not reheat prawns twice.",
+      "category": "cooking_time",
+      "priority": "quick"
+    },
+    {
+      "id": "vegetables_wilted",
+      "keywords": ["wilted", "limp", "old vegetables", "not fresh veg", "layu"],
+      "dish": "vegetables",
+      "rootCause": "Vegetables stored too long or improperly, or pre-cut too far in advance",
+      "action": "1) Order perishable greens (kangkung, bok choy) for delivery every 1-2 days, not weekly. 2) Store in perforated bags at 4°C with paper towel to absorb moisture. 3) Cut vegetables no more than 2 hours before service.",
+      "category": "supplier",
+      "priority": "urgent"
+    },
+    {
+      "id": "vegetables_overcooked",
+      "keywords": ["mushy vegetables", "overcooked veg", "no crunch", "soggy vegetables"],
+      "dish": "vegetables",
+      "rootCause": "Stir-fry time too long or wok not hot enough requiring longer cook",
+      "action": "Preheat wok to smoking point before adding oil. Stir-fry leafy greens 60-90 seconds max, firmer vegetables (carrots, broccoli) 2-3 min. Blanch firm vegetables 30 sec beforehand to speed final cook.",
+      "category": "cooking_time",
+      "priority": "quick"
+    },
+    {
+      "id": "vegetables_bland",
+      "keywords": ["bland vegetables", "tasteless veg", "no flavor"],
+      "dish": "vegetables",
+      "rootCause": "Under-seasoned or garlic/aromatics added too late",
+      "action": "Fry minced garlic (1 tsp per 200g veg) in oil until fragrant BEFORE adding vegetables. Season with 1/2 tsp salt + 1 tsp oyster sauce per 200g portion, added in final 30 seconds of cooking.",
+      "category": "seasoning",
+      "priority": "quick"
+    },
+    {
+      "id": "curry_too_spicy",
+      "keywords": ["too spicy", "too hot", "burning", "excessive chili"],
+      "dish": "curry",
+      "rootCause": "Chili paste ratio not standardized, or batch-to-batch variance in chili heat",
+      "action": "1) Standardize chili paste recipe by weight, not eyeballing—document exact grams per pot size. 2) Offer 'mild/medium/spicy' options where feasible. 3) Taste-test each new batch of chili/sambal against a reference sample before use.",
+      "category": "quality_control",
+      "priority": "medium"
+    },
+    {
+      "id": "curry_too_bland",
+      "keywords": ["bland curry", "no taste", "weak flavor", "watery curry"],
+      "dish": "curry",
+      "rootCause": "Insufficient spice toasting or curry diluted with too much water/stock",
+      "action": "Toast curry powder/paste in oil for 3-5 min until fragrant and oil separates before adding liquid. Reduce added water by 20% and let curry simmer uncovered 15-20 min to concentrate flavor.",
+      "category": "seasoning",
+      "priority": "quick"
+    },
+    {
+      "id": "dish_too_salty",
+      "keywords": ["too salty", "oversalted", "masin sangat"],
+      "dish": "general/sauces",
+      "rootCause": "Inconsistent measuring of soy sauce/salt, or sauce reduced too much concentrating saltiness",
+      "action": "Use measuring spoons, not free-pouring, for soy sauce and salt—standardize to recipe card (e.g., 1.5 tbsp light soy per 300g protein). If sauce over-reduces, add water/stock in small increments to rebalance before plating.",
+      "category": "quality_control",
+      "priority": "quick"
+    },
+    {
+      "id": "sauce_too_sweet",
+      "keywords": ["too sweet", "sugary", "manis sangat"],
+      "dish": "sauces",
+      "rootCause": "Sugar/palm sugar measured inconsistently or compensating for bitterness with excess sugar",
+      "action": "Standardize sugar quantity per recipe card by weight (grams), not by 'handful'. Balance with acid (1 tsp lime/tamarind juice per 500ml sauce) instead of adding more sugar to fix flavor issues.",
+      "category": "seasoning",
+      "priority": "quick"
+    },
+    {
+      "id": "seasoning_inconsistent_cook_to_cook",
+      "keywords": ["tastes different from last time", "not the same recipe", "inconsistent taste"],
+      "dish": "general",
+      "rootCause": "Recipes passed down verbally, no written standard, different cooks eyeball measurements",
+      "action": "Create laminated recipe cards with exact gram/ml measurements for top 15 dishes. Assign one 'flavor lead' per shift to taste-check every batch of sauce/gravy before it goes to line.",
+      "category": "quality_control",
+      "priority": "medium"
+    },
+    {
+      "id": "portion_too_small",
+      "keywords": ["small portion", "not enough food", "too little", "stingy"],
+      "dish": "general",
+      "rootCause": "No standardized portion weights, staff eyeballing servings inconsistently",
+      "action": "Weigh and document standard portions per dish (e.g., rice 250g, protein 150g, vegetables 100g). Provide staff with portion scoops/scales at the line. Audit portions weekly with a scale spot-check.",
+      "category": "portion_control",
+      "priority": "medium"
+    },
+    {
+      "id": "portion_inconsistent",
+      "keywords": ["portion varies", "sometimes more sometimes less", "unequal servings"],
+      "dish": "general",
+      "rootCause": "No use of scales or standard scoop sizes during plating",
+      "action": "Install a scale at the plating station for high-cost items (meat, seafood). Use color-coded scoops for rice/noodles (e.g., red scoop = 250g). Retrain staff on portioning during weekly briefing.",
+      "category": "portion_control",
+      "priority": "medium"
+    },
+    {
+      "id": "food_cold_on_arrival",
+      "keywords": ["cold food", "not hot", "lukewarm", "sejuk"],
+      "dish": "general",
+      "rootCause": "Food held too long under heat lamp/pass, or excessive time between plating and service",
+      "action": "Limit hold time under heat lamp to max 8-10 min before serving. Use hot plates (heated to 60°C) for dishes prone to cooling fast (soups, gravies). Coordinate with servers to pick up immediately when order bell rings—target under 3 min from pass to table.",
+      "category": "service_speed",
+      "priority": "quick"
+    },
+    {
+      "id": "soup_not_hot_enough",
+      "keywords": ["soup lukewarm", "not steaming", "cold soup"],
+      "dish": "soup",
+      "rootCause": "Soup kept in bain-marie below serving temp or served in cold bowls",
+      "action": "Keep soup bain-marie at minimum 75°C. Pre-warm serving bowls with hot water before ladling (30 sec dip, then dry). Ladle soup immediately before serving, never batch into bowls ahead of time.",
+      "category": "temperature_control",
+      "priority": "quick"
+    },
+    {
+      "id": "fried_food_not_hot_crispy",
+      "keywords": ["not crispy", "soggy fried food", "lost crunch", "not hot"],
+      "dish": "fried items (popiah, karipap, fried chicken)",
+      "rootCause": "Fried too far in advance, held under lamp too long causing steam to soften coating, or oil temp too low",
+      "action": "Fry to order where possible—batch fry no more than 10 min before service. Fry at correct oil temp (175-180°C) tested with thermometer, not by eye. Rest fried items on a wire rack, not a flat tray, so steam escapes instead of softening the base.",
+      "category": "temperature_control",
+      "priority": "quick"
+    },
+    {
+      "id": "food_too_hot_burnt_mouth",
+      "keywords": ["too hot", "burned my tongue", "scalding"],
+      "dish": "soups/gravies",
+      "rootCause": "Served immediately from boiling without brief rest, or bowl overheated",
+      "action": "Let boiling soups/gravies rest 1-2 min after ladling before serving. Verbally warn customers 'hati-hati, panas' (careful, hot) when serving items above 70°C.",
+      "category": "service_process",
+      "priority": "quick"
+    },
+    {
+      "id": "service_too_slow",
+      "keywords": ["slow service", "took too long", "waited forever", "lambat"],
+      "dish": "service",
+      "rootCause": "Kitchen bottleneck during peak hours, understaffing, or poor order sequencing",
+      "action": "1) Analyze peak-hour order tickets to identify bottleneck station (usually wok or fry station). 2) Add 1 extra prep cook during identified peak windows. 3) Pre-prep mise en place (chopped garlic, marinated proteins) before service to cut cook time by up to 30%. 4) Set target ticket times: appetizers 8 min, mains 15 min.",
+      "category": "service_speed",
+      "priority": "medium"
+    },
+    {
+      "id": "wrong_order_delivered",
+      "keywords": ["wrong order", "not what i ordered", "mixed up"],
+      "dish": "service",
+      "rootCause": "Miscommunication between server and kitchen, illegible handwritten tickets, or table mix-up",
+      "action": "Switch to digital POS ticketing if not already in use—eliminates handwriting errors. Require servers to read back order to customer at table before submitting. Number/label tables clearly for runner staff.",
+      "category": "service_process",
+      "priority": "medium"
+    },
+    {
+      "id": "long_wait_during_peak",
+      "keywords": ["long queue", "packed", "no seats", "waited outside"],
+      "dish": "service",
+      "rootCause": "Table turnover too slow or insufficient staff to manage peak volume",
+      "action": "Implement a queue/waitlist system (physical or app-based) with estimated wait times. Pre-bus and reset tables within 5 min of guests leaving. Consider a simplified 'express menu' for peak lunch hours to speed kitchen output.",
+      "category": "service_speed",
+      "priority": "medium"
+    },
+    {
+      "id": "char_kway_teow_not_smoky",
+      "keywords": ["no wok hei", "not smoky", "tastes flat", "missing char"],
+      "dish": "char kway teow",
+      "rootCause": "Wok not hot enough or overcrowded pan preventing proper searing",
+      "action": "Cook in small batches (max 300g noodles per wok load) over highest flame available. Preheat wok until lightly smoking before adding oil. Avoid stirring too frequently—let noodles sit against hot wok surface for a few seconds between tosses to develop char.",
+      "category": "cooking_technique",
+      "priority": "medium"
+    },
+    {
+      "id": "satay_sauce_too_thick_thin",
+      "keywords": ["sauce too thick", "sauce too watery", "gravy consistency off"],
+      "dish": "peanut sauce",
+      "rootCause": "Inconsistent water/coconut milk ratio, or sauce not adjusted for evaporation over service period",
+      "action": "Standardize recipe ratio (e.g., 1L water : 400g ground peanut : 100ml santan). Check consistency every 30 min during service and thin with warm water 1 tbsp at a time as needed to maintain pourable consistency.",
+      "category": "quality_control",
+      "priority": "quick"
+    },
+    {
+      "id": "tofu_soggy_broken",
+      "keywords": ["falling apart", "mushy tofu", "broken tofu"],
+      "dish": "tofu",
+      "rootCause": "Tofu not pressed/drained before cooking, or over-stirred during cooking",
+      "action": "Press tofu with paper towel/weight for 10-15 min before frying to remove excess water. Fry firm tofu at 175°C until golden (avoid over-handling). Add tofu to stir-fries last and stir gently, not aggressively.",
+      "category": "prep_technique",
+      "priority": "quick"
+    },
+    {
+      "id": "roti_canai_tough_chewy",
+      "keywords": ["hard roti", "tough roti", "not fluffy", "chewy roti canai"],
+      "dish": "roti canai",
+      "rootCause": "Insufficient resting time for dough, or overworked gluten",
+      "action": "Rest dough minimum 2-3 hours (ideally overnight, refrigerated) before use. Ensure adequate oil/ghee coating between folds. Cook on medium heat, flipping every 30-45 seconds until golden, avoiding overworking on the flat-top.",
+      "category": "prep_technique",
+      "priority": "medium"
+    },
+    {
+      "id": "laksa_broth_bland_thin",
+      "keywords": ["watery broth", "thin soup", "bland laksa", "no flavor broth"],
+      "dish": "laksa",
+      "rootCause": "Rempah (spice paste) under-cooked/under-fried, or broth diluted without adjusting seasoning",
+      "action": "Fry rempah in oil for minimum 8-10 min on low-medium heat until oil separates and paste turns deep red/fragrant before adding stock. If broth needs thinning, compensate with extra 1 tbsp fish stock concentrate per liter added.",
+      "category": "seasoning",
+      "priority": "medium"
+    },
+    {
+      "id": "portion_protein_too_little",
+      "keywords": ["not enough meat", "too little chicken", "barely any protein"],
+      "dish": "general - protein portions",
+      "rootCause": "Rising ingredient costs leading to informal portion-cutting without menu/price adjustment",
+      "action": "Recalculate food cost % for affected dishes. If margins are tight, formally adjust portion size on recipe card AND reflect on menu description, or adjust price—do not silently shrink portions as this drives complaints. Standardize protein weight at 150-180g per main.",
+      "category": "portion_control",
+      "priority": "medium"
+    },
+    {
+      "id": "ice_watery_drinks",
+      "keywords": ["watered down", "too much ice", "weak drink"],
+      "dish": "beverages",
+      "rootCause": "Ice-to-liquid ratio too high, or drink pre-mixed too far in advance and diluted by melting ice",
+      "action": "Standardize recipe: fill glass with ice first to a marked line (about 1/3 full), then add concentrate/syrup, then top with liquid. Mix drinks to order, not in advance.",
+      "category": "quality_control",
+      "priority": "quick"
+    },
+    {
+      "id": "hygiene_hair_foreign_object",
+      "keywords": ["hair in food", "foreign object", "found something"],
+      "dish": "general",
+      "rootCause": "Inadequate hairnet/uniform compliance or insufficient final visual check before plating",
+      "action": "Enforce mandatory hairnets/caps for all kitchen staff—no exceptions. Assign a final 'plate check' step before dishes leave the pass. Immediately replace the dish for the customer and log the incident for staff retraining.",
+      "category": "food_safety",
+      "priority": "urgent"
+    },
+    {
+      "id": "oil_rancid_taste",
+      "keywords": ["off taste", "rancid", "old oil taste", "burnt oil flavor"],
+      "dish": "fried items",
+      "rootCause": "Frying oil reused too many times without filtering or replacement",
+      "action": "Filter frying oil daily through a fine mesh/cheesecloth. Replace oil after maximum 3-5 days of heavy use or when it darkens/smokes below 175°C. Track oil age with a dated label on the fryer.",
+      "category": "quality_control",
+      "priority": "urgent"
+    }
+  ]
+}
