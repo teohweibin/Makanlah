@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
 import { DinerRewards } from '@/components/DinerRewards';
 import { InvitationList } from '@/components/InvitationCard';
 import { NudgeToggle } from '@/components/NudgeToggle';
@@ -193,15 +192,11 @@ export default async function DinerHub({
         title="Yours, not theirs"
         subtitle="Read live from your wallet on Solana devnet."
       >
-        <Suspense
-          fallback={
-            <Card className="p-5">
-              <p className="text-sm text-[var(--color-muted)]">Reading your wallet…</p>
-            </Card>
-          }
-        >
-          <DinerRewards dinerId={diner.id} />
-        </Suspense>
+        {/* 不用 <Suspense> 包：reward 卡片里有可点的 "Use Reward" 按钮，而
+            streamed boundary 里的内容会以未 hydrate 的 server HTML 到达 —
+            按钮渲染出来但没有 React fiber，点了没反应。直接 await 链上查询
+            （约 700ms）换取这一段真的可交互。 */}
+        <DinerRewards dinerId={diner.id} />
         <Link
           href={`/diner/${diner.id}/wallet`}
           className="mt-3 block text-center text-sm font-medium text-[var(--color-muted)] underline underline-offset-4 hover:text-[var(--color-ink)]"

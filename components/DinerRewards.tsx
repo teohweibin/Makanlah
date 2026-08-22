@@ -8,6 +8,7 @@ import { loadDataset } from '@/lib/fixtures';
 import { knownRewards } from '@/lib/rewards';
 import { explorerUrl, isChainConfigured, listWalletRewards } from '@/lib/solana';
 import { Card } from '@/components/ui';
+import { UseRewardButton } from '@/components/UseRewardButton';
 
 export async function DinerRewards({ dinerId }: { dinerId: string }) {
   const ds = loadDataset();
@@ -113,6 +114,11 @@ export async function DinerRewards({ dinerId }: { dinerId: string }) {
               >
                 {r.mint_address.slice(0, 8)}…{r.mint_address.slice(-8)}
               </a>
+              <UseRewardButton
+                dinerId={dinerId}
+                mintAddress={r.mint_address}
+                label={r.label}
+              />
             </Card>
           ))}
 

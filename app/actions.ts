@@ -9,7 +9,14 @@ import {
   checkReviewCap,
 } from '@/lib/engine';
 import { loadDataset } from '@/lib/fixtures';
-import { isChainConfigured, issueRewardToken } from '@/lib/solana';
+import {
+  isChainConfigured,
+  issueRewardToken,
+  readRedemption,
+  redeemRewardToken,
+} from '@/lib/solana';
+import { createRedemptionCode, lookupCode, markCodeUsed } from '@/lib/redemption';
+import { knownRewards } from '@/lib/rewards';
 import {
   addAcceptedInvite,
   addSubmittedReview,
@@ -366,4 +373,90 @@ export async function dismissNotification(input: { notification_id: string; dine
   revalidatePath(`/diner?as=${input.diner_id}`);
   revalidatePath(`/diner/${input.diner_id}`);
   return { ok: true as const };
+}
+
+/* ── reward redemption ───────────────────────────────────────────────────── */
+
+/** Diner taps "Use Reward": issue a short-lived code. The token is NOT burned yet. */
+export async function issueRedemptionCode(input: { diner_id: string; mint_address: string }) {
+  const ds = loadDataset();
+  const diner = ds.diners.find((d) => d.id === input.diner_id);
+  if (!diner) throw new Error('Unknown diner');
+
+  // Only hand out a code for a token this wallet actually still holds. Asking the chain
+  // rather than our records means a token burned elsewhere cannot be offered again.
+  const status = await readRedemption(input.mint_address, diner.wallet_address);
+  if (status.status !== 'unredeemed') {
+    return { ok: false as const, reason: 'not_available' as const, status: status.status };
+  }
+
+  const entry = createRedemptionCode(input.mint_address, input.diner_id);
+  return { ok: true as const, code: entry.code, expires_at: entry.expires_at };
+}
+
+export type RedeemResult =
+  | {
+      ok: true;
+      diner_name: string;
+      reward_label: string;
+      issuer_name: string;
+      signature: string;
+    }
+  | { ok: false; reason: string };
+
+/**
+ * Restaurant enters the code: burn the token on devnet, then mark the code spent.
+ *
+ * Order matters. The code is only consumed after the burn confirms, so a failed burn
+ * leaves the diner able to try again rather than losing the reward to a network blip.
+ */
+export async function redeemWithCode(input: { code: string }): Promise<RedeemResult> {
+  const found = lookupCode(input.code);
+  if (!found.ok) {
+    return {
+      ok: false,
+      reason:
+        found.reason === 'not_found'
+          ? 'That code does not match any reward.'
+          : found.reason === 'expired'
+            ? 'That code has expired — ask the diner to tap Use Reward again.'
+            : 'That code has already been used.',
+    };
+  }
+
+  const ds = loadDataset();
+  const diner = ds.diners.find((d) => d.id === found.entry.diner_id);
+  if (!diner) return { ok: false, reason: 'Unknown diner for that code.' };
+
+  const known = knownRewards(ds).find((r) => r.mint_address === found.entry.mint_address);
+  const issuer = known ? ds.restaurants.find((r) => r.id === known.restaurant_id) : undefined;
+  // Phrase it fully here so the UI never has to append the word "reward" and end up
+  // with "reward reward" for a token we did not issue.
+  const rewardLabel = known
+    ? `${ds.interventionLookup.presentation[known.intervention_type].icon} ` +
+      `${ds.interventionLookup.presentation[known.intervention_type].tag_label} reward`
+    : 'reward';
+
+  try {
+    const { signature } = await redeemRewardToken(found.entry.mint_address, found.entry.diner_id);
+    markCodeUsed(found.entry.code);
+
+    // Both sides read the chain, so both should re-query now.
+    revalidatePath('/diner');
+    revalidatePath(`/diner/${found.entry.diner_id}`);
+    for (const r of ds.restaurants) revalidatePath(`/restaurant/${r.id}`);
+
+    return {
+      ok: true,
+      diner_name: diner.name.replace(' (demo profile)', ''),
+      reward_label: rewardLabel,
+      issuer_name: issuer?.name ?? 'another restaurant',
+      signature,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      reason: e instanceof Error ? `Could not burn the token: ${e.message}` : 'Burn failed.',
+    };
+  }
 }
