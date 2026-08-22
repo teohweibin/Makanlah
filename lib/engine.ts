@@ -120,30 +120,36 @@ export function parseGuidedTag(raw: string, tags: GuidedReviewTag[]): ParsedTag 
 }
 
 /**
- * Keyword-based tag matching for free text — deliberately NOT a live LLM call
- * (too unpredictable for a live demo). Used by the guided review UI in step 4.
+ * Gemini's `issue_category` mapped onto the reason vocabulary the intervention lookup
+ * speaks. Note `service` deliberately lands on `no_signal`: our Reason→Intervention
+ * table has no service row, and offering priority seating to someone who complained
+ * about rudeness would be a worse answer than a neutral invitation.
  */
-export function matchTagsFromText(text: string, tags: GuidedReviewTag[]): GuidedReviewTag[] {
-  const haystack = text.toLowerCase();
-  return tags.filter((t) => t.keywords.some((k) => haystack.includes(k.toLowerCase())));
+const AI_ISSUE_TO_REASON: Record<string, ReasonType> = {
+  dish_quality: 'dish_issue',
+  portion: 'dish_issue',
+  wait_time: 'wait_time',
+  price: 'declining_spend',
+  service: 'no_signal',
+  other: 'no_signal',
+  none: 'none',
+};
+
+export function aiIssueToReason(issueCategory: string): ReasonType {
+  return AI_ISSUE_TO_REASON[issueCategory] ?? 'no_signal';
 }
 
-/**
- * Same match, but reports which word triggered it — the guided review UI quotes the
- * diner's own word back at them ("You said 'dry' — which dish?") instead of guessing
- * silently. That quoted word is what makes the follow-up feel like listening.
- */
-export function matchTagsWithKeywords(
-  text: string,
-  tags: GuidedReviewTag[],
-): Array<{ tag: GuidedReviewTag; keyword: string }> {
-  const haystack = text.toLowerCase();
-  const hits: Array<{ tag: GuidedReviewTag; keyword: string }> = [];
-  for (const tag of tags) {
-    const keyword = tag.keywords.find((k) => haystack.includes(k.toLowerCase()));
-    if (keyword) hits.push({ tag, keyword });
-  }
-  return hits;
+/** Carries the photo tier through intact — selectIntervention normalises it later. */
+export function aiEvidenceToStrength(combined: string): EvidenceStrength {
+  if (combined === 'verified_with_photo') return 'verified_with_photo';
+  if (combined === 'strong') return 'strong';
+  if (combined === 'weak') return 'weak';
+  return 'none';
+}
+
+/** True for any evidence the diner gave us first-hand, photo-backed or not. */
+export function isFirstHand(evidence: EvidenceStrength): boolean {
+  return evidence === 'verified_with_photo' || evidence === 'strong';
 }
 
 /** Mean order amount of the newer half vs the older half. Negative == spending less. */
@@ -163,6 +169,7 @@ interface ReasonResult {
   evidence_strength: EvidenceStrength;
   evidence_source: RiskFlag['evidence_source'];
   evidence_note: string;
+  owner_summary: string | null;
   related_dish_id: string | null;
 }
 
@@ -183,6 +190,24 @@ export function determineReason(
     .sort((a, b) => a.days_ago - b.days_ago); // most recent first
 
   for (const review of reviews) {
+    // AI-analysed reviews carry their own verdict; prefer it over the legacy tag scan.
+    if (review.ai && review.ai.combined_evidence_strength !== 'none') {
+      const reason = aiIssueToReason(review.ai.issue_category);
+      if (reason !== 'none') {
+        const verified = review.ai.combined_evidence_strength === 'verified_with_photo';
+        return {
+          reason_type: reason,
+          evidence_strength: aiEvidenceToStrength(review.ai.combined_evidence_strength),
+          evidence_source: 'guided_review',
+          evidence_note:
+            `${review.ai.owner_summary} (${agoLabel(review.days_ago)}` +
+            `${verified ? ', confirmed by their photo' : ''})`,
+          owner_summary: review.ai.owner_summary,
+          related_dish_id: review.ai.specific_dish_id,
+        };
+      }
+    }
+
     for (const raw of review.guided_tags) {
       const { tag, dishId } = parseGuidedTag(raw, ds.guidedReviewTags);
       if (!tag || tag.reason_type === 'none') continue;
@@ -194,6 +219,8 @@ export function determineReason(
         evidence_note:
           `Verified from a guided review ${agoLabel(review.days_ago)}: "${tag.label}"` +
           (dishName ? ` on ${dishName}.` : '.'),
+
+        owner_summary: null,
         related_dish_id: dishId,
       };
     }
@@ -211,6 +238,7 @@ export function determineReason(
       evidence_note:
         `Inferred: opened the app ${opens} time${opens === 1 ? '' : 's'} in the last ${w} days ` +
         `without ordering. No review on file, so the reason is unconfirmed.`,
+      owner_summary: null,
       related_dish_id: null,
     };
   }
@@ -224,6 +252,7 @@ export function determineReason(
       evidence_note:
         `Inferred from order pattern: average spend down ${Math.round(Math.abs(trend) * 100)}% ` +
         `across recent visits. No review on file, so the reason is unconfirmed.`,
+      owner_summary: null,
       related_dish_id: null,
     };
   }
@@ -233,6 +262,7 @@ export function determineReason(
     evidence_strength: 'none',
     evidence_source: 'none',
     evidence_note: 'No review history and no spend signal — we genuinely do not know why.',
+    owner_summary: null,
     related_dish_id: null,
   };
 }
@@ -245,8 +275,11 @@ export function determineReason(
 export function selectIntervention(
   reason: ReasonType, evidence: EvidenceStrength, lookup: InterventionLookup,
 ): InterventionType {
+  // The table has no verified_with_photo row — a photo makes the claim more certain,
+  // not a different problem, so it selects the same intervention as strong.
+  const key = evidence === 'verified_with_photo' ? 'strong' : evidence;
   const rule = lookup.rules.find(
-    (r) => r.reason_type === reason && r.evidence_strength === evidence,
+    (r) => r.reason_type === reason && r.evidence_strength === key,
   );
   return rule ? rule.intervention_type : lookup.fallback_intervention_type;
 }
@@ -300,6 +333,7 @@ export function evaluateDiner(
     evidence_strength: reason.evidence_strength,
     evidence_note: reason.evidence_note,
     evidence_source: reason.evidence_source,
+    owner_summary: reason.owner_summary,
     related_dish_id: reason.related_dish_id,
     baseline_cadence: baseline,
     days_since_last_order: since,
@@ -312,6 +346,87 @@ export interface FlaggedDiner {
   diner: Diner;
   intervention_type: InterventionType;
   headline: string;
+}
+
+export interface MerchantActionItemLink {
+  dinerId: string;
+  dinerName: string;
+  reviewId: string;
+  orderId: string;
+  daysAgo: number;
+}
+
+export interface MerchantActionItem {
+  id: string;
+  issueText: string;
+  count: number;
+  fixed: boolean;
+  linkedDiners: MerchantActionItemLink[];
+  linkedMessageTemplate: string;
+}
+
+/**
+ * Groups confirmed guided-review issues by issue type for a merchant.
+ * This checklist is intentionally limited to diner-reported guided tags only:
+ * silent churn and no-signal states are inferred from app behavior, not from a diner
+ * telling us what went wrong, so they are deliberately excluded here. If this filter is
+ * removed, the action list starts mixing real complaints with generic churn signals.
+ */
+export function getMerchantActionItems(ds: Dataset, merchantId: string): MerchantActionItem[] {
+  const grouped = new Map<string, {
+    id: string;
+    issueText: string;
+    reasonType: ReasonType;
+    linkedDiners: MerchantActionItemLink[];
+  }>();
+
+  for (const review of ds.reviews.filter((r) => r.restaurant_id === merchantId)) {
+    const diner = ds.diners.find((d) => d.id === review.diner_id);
+
+    for (const rawTag of review.guided_tags) {
+      const { tag } = parseGuidedTag(rawTag, ds.guidedReviewTags);
+      // Keep this to explicit diner-reported guided-review issues only; do not include
+      // inferred churn/no-signal states or positive feedback tags.
+      if (
+        !tag ||
+        tag.reason_type === 'none' ||
+        tag.reason_type === 'silent_churn' ||
+        tag.reason_type === 'no_signal'
+      ) continue;
+
+      const key = tag.id;
+      const current = grouped.get(key) ?? {
+        id: `${merchantId}-${tag.id}`,
+        issueText: tag.label,
+        reasonType: tag.reason_type,
+        linkedDiners: [],
+      };
+
+      current.linkedDiners.push({
+        dinerId: review.diner_id,
+        dinerName: diner?.name ?? review.diner_id,
+        reviewId: review.id,
+        orderId: review.order_id,
+        daysAgo: review.days_ago,
+      });
+
+      grouped.set(key, current);
+    }
+  }
+
+  return [...grouped.values()]
+    .map((entry) => {
+      const interventionType = selectIntervention(entry.reasonType, 'strong', ds.interventionLookup);
+      return {
+        id: entry.id,
+        issueText: entry.issueText,
+        count: entry.linkedDiners.length,
+        fixed: false,
+        linkedDiners: entry.linkedDiners,
+        linkedMessageTemplate: ds.interventionLookup.presentation[interventionType].headline_template,
+      } satisfies MerchantActionItem;
+    })
+    .sort((a, b) => b.count - a.count || a.issueText.localeCompare(b.issueText));
 }
 
 /** Every flagged diner for one restaurant, most urgent first. */
@@ -332,7 +447,7 @@ export function evaluateRestaurant(ds: Dataset, restaurantId: string): FlaggedDi
     })
     .filter((x): x is FlaggedDiner => x !== null)
     .sort((a, b) => {
-      const rank = { strong: 0, weak: 1, none: 2 } as const;
+      const rank = { verified_with_photo: 0, strong: 1, weak: 2, none: 3 } as const;
       const byEvidence = rank[a.flag.evidence_strength] - rank[b.flag.evidence_strength];
       if (byEvidence !== 0) return byEvidence;
       return (b.flag.days_since_last_order ?? 0) - (a.flag.days_since_last_order ?? 0);

@@ -1,5 +1,18 @@
 import type { Metadata } from 'next';
+import { Oswald, Inter } from 'next/font/google';
 import './globals.css';
+
+const displayFont = Oswald({
+  subsets: ['latin'],
+  weight: ['500', '600'],
+  variable: '--font-display',
+});
+
+const sansFont = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'MakanLagi',
@@ -8,16 +21,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Oswald:wght@500;600&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="min-h-screen antialiased">{children}</body>
+    <html lang="en" className={`${displayFont.variable} ${sansFont.variable}`}>
+      <body className="min-h-screen antialiased font-sans">{children}</body>
     </html>
   );
 }

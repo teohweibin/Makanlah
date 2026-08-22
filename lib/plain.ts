@@ -51,6 +51,15 @@ export function plainFlag(
   reason: ReasonType,
   toldUs: string | null,
 ): PlainFlag {
+  if (evidence === 'verified_with_photo') {
+    return {
+      headline: 'Needs attention',
+      detail: toldUs
+        ? `They told you: ${toldUs} — and sent a photo`
+        : 'They told you what went wrong, and sent a photo.',
+      tone: 'amber',
+    };
+  }
   if (evidence === 'strong') {
     return {
       headline: 'Needs attention',
@@ -84,4 +93,47 @@ export function plainToldUs(reason: ReasonType, dishName: string | null): string
     default:
       return null;
   }
+}
+
+
+/* ── evidence vocabulary ─────────────────────────────────────────────────── */
+//
+// Lives here, not in components/ui.tsx, because ui.tsx is a client component and
+// server pages need these strings too. One source of truth for both sides.
+
+export const EVIDENCE_DISPLAY: Record<
+  EvidenceStrength,
+  { label: string; className: string; hint: string }
+> = {
+  verified_with_photo: {
+    label: 'Verified — photo + review',
+    className:
+      'border border-[var(--color-verified)] bg-[var(--color-soft-green)] text-[var(--color-verified)]',
+    hint: 'They showed us — a photo backs up what they said',
+  },
+  strong: {
+    label: 'Verified from review',
+    className:
+      'border border-[var(--color-verified)]/30 bg-[var(--color-soft-green)] text-[var(--color-verified)]',
+    hint: 'From a guided review — the diner told us this themselves',
+  },
+  weak: {
+    label: 'Inferred from behavior',
+    className:
+      'border border-[var(--color-inferred)]/30 bg-[var(--color-soft-mustard)] text-[var(--color-inferred)]',
+    hint: 'Pattern-based guess — not confirmed by the diner',
+  },
+  none: {
+    label: 'No signal',
+    className: 'border border-[var(--color-ink)]/15 bg-[var(--color-paper)] text-stone-600',
+    hint: 'No supporting data at all — treat gently',
+  },
+};
+
+export function evidenceLabel(strength: EvidenceStrength): string {
+  return EVIDENCE_DISPLAY[strength].label;
+}
+
+export function evidenceHint(strength: EvidenceStrength): string {
+  return EVIDENCE_DISPLAY[strength].hint;
 }

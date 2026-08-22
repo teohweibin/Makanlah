@@ -12,6 +12,17 @@ export interface SubmittedReview {
   intervention_type: InterventionType;
   reward_percent: number;
   reward_token_id: string;
+  /** AI evidence tier, decides the reward copy and size. */
+  evidence: string;
+  owner_summary: string;
+  photo_verdict: string;
+  had_photo: boolean;
+  /**
+   * The photo itself, base64, kept in memory only so the owner can see what the diner
+   * saw. Never written to disk or git — it dies with the server, like every other
+   * runtime review in this demo.
+   */
+  photo_base64: string | null;
   /** Real devnet SPL mint, filled once the token is issued on chain. */
   mint_address: string | null;
   mint_signature: string | null;

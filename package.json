@@ -14,9 +14,11 @@
     "chain:smoke": "node scripts/solana-smoke.mjs"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@solana/spl-token": "^0.4.15",
     "@solana/web3.js": "^1.98.4",
     "bs58": "^6.0.0",
+    "gsap": "^3.15.0",
     "next": "^15.5.4",
     "qrcode": "^1.5.4",
     "react": "^19.1.1",
